@@ -174,11 +174,8 @@ tk_nc_data_undetected <- aggregate_csvs(
 )
 ```
 
-# Visualizations
-
-Based on LA Fire Situation Report
-
 ## Latitude and Longitude
+
 ```{r}
 # convert latitude/longitude points into sf objects, then join them to county polygons
 library(sf)
@@ -197,7 +194,6 @@ counties_sf <- counties(cb = TRUE, year = 2023) %>%
     geometry
   )
 ```
-
 
 ```{r}
 # Assign coordinates to counties
@@ -224,7 +220,9 @@ add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
 ```
 
 ## General
+
 ### Business Activity
+
 ```{r}
 ba_data <- add_county_from_coords(
   df = ba_data,
@@ -235,6 +233,7 @@ ba_data <- add_county_from_coords(
 ```
 
 ### Movement Between Places (In progress/runtime issues)
+
 ```{r, execute = FALSE}
 # Origin
 mp_data<- add_county_from_coords(
@@ -254,9 +253,10 @@ mp_data_counties <- add_county_from_coords(
 
 ```
 
+## Tennessee Kentucky
 
-## Tennessee Kentucky 
-### Movement Between Places 
+### Movement Between Places
+
 ```{r}
 # Administrative Regions
 # Origin counties
@@ -294,6 +294,7 @@ tk_mp_data_bing <- add_county_from_coords(
 ```
 
 ### Facebook Population
+
 ```{r}
 # Administrative Regions
 
@@ -317,6 +318,7 @@ tk_fb_data_bing <- add_county_from_coords(
 ```
 
 ### Network Coverage
+
 ```{r}
 # Active
 tk_nc_data_active <- add_county_from_coords(
@@ -333,4 +335,43 @@ tk_nc_data_undetected <- add_county_from_coords(
   prefix = ""
 )
 ```
+
+# Visualizations
+
+Based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
+
+```{r}
+library(ggplot2)
+library(gt)
+library(scales)
+library(lubridate)
+
+latest_date <- max(tk_fb_data_admin$ds, na.rm = TRUE)
+
+fb_latest_county <- tk_fb_data_admin %>%
+  filter(ds == latest_date) %>%
+  group_by(county_geoid, county_name, county_state) %>%
+  summarise(
+    mean_percent_change = mean(percent_change, na.rm = TRUE),
+    baseline_pop = sum(n_baseline, na.rm = TRUE),
+    crisis_pop = sum(n_crisis, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+fb_map <- counties_sf %>%
+  inner_join(fb_latest_county, by = "county_geoid")
+
+ggplot(fb_map) +
+  geom_sf(aes(fill = mean_percent_change), linewidth = 0.2) +
+  scale_fill_gradient2(
+    labels = label_number(suffix = "%", accuracy = 1)
+  ) +
+  labs(
+    title = paste("Population Density Change on", latest_date),
+    fill = "% Change vs Baseline"
+  ) +
+  theme_minimal()
+```
+Check how we're getting 
+
 
