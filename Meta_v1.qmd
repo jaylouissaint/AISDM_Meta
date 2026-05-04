@@ -10,7 +10,12 @@ format:
     pdf-engine: xelatex
 ---
 
-# Fern General
+# Data
+
+## Fern General
+
+### Functions
+
 ```{r}
 library(readr)
 library(dplyr)
@@ -56,8 +61,14 @@ aggregate_csvs <- function(path_parts,
     combined_data_dedup <- combined_data
   }
   
-  # Output path
-  output_file <- file.path(data_dir, output_name)
+  # Output path at project root
+  output_dir <- here::here("outputs")
+  
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+  
+  output_file <- file.path(output_dir, output_name)
   
   # Write file
   write_csv(combined_data_dedup, output_file)
@@ -70,7 +81,6 @@ aggregate_csvs <- function(path_parts,
   return(combined_data_dedup)
 }
 ```
-
 
 ```{r}
 analyze_dataset <- function(df) {
@@ -89,30 +99,81 @@ analyze_dataset <- function(df) {
 }
 ```
 
-## Business Activity
+### Business Activity
+
 ```{r}
 ba_data <- aggregate_csvs(
-  path_parts = c("Meta", "Fern_General", "Business_Activity"),
+  path_parts = c("Fern_General", "Business_Activity"),
   output_name = "business_activity_aggregated.csv"
 )
 ```
 
+### Movement Between Places
 
-## Movement Between Places
 ```{r}
 mp_data <- aggregate_csvs(
-  path_parts = c("Meta", "Fern_General", "Movement_between_Places"),
+  path_parts = c("Fern_General", "Movement_between_Places"),
   output_name = "movement_between_places_aggregated.csv"
 )
 ```
 
+### Summary Statistics
 
-## Summary Statistics
 ```{r}
-analyze_dataset(ba_combined_data_dedup)
-analyze_dataset(mp_combined_data_dedup)
+analyze_dataset(ba_data)
+analyze_dataset(mp_data)
 ```
-
 
 ## Tennessee_Kentucky
 
+### Movement Between Places During a Crisis
+
+```{r}
+tk_mp_data_admin <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Administrative_Regions"),
+  output_name = "tk_movement_between_places_aggregated_admin.csv"
+)
+```
+
+```{r}
+tk_mp_data_bing <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Bing_Tiles"),
+  output_name = "tk_movement_between_places_aggregated_bing.csv"
+)
+```
+
+### Facebook Population during crisis
+
+```{r}
+tk_fb_data_admin <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Administrative_Regions"),
+  output_name = "tk_facebook_pop_aggregated_admin.csv"
+)
+```
+
+```{r}
+tk_fb_data_bing <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Bing_Tiles"),
+  output_name = "tk_facebook_pop_aggregated_bing.csv"
+)
+```
+
+### Network Coverage
+
+```{r}
+tk_nc_data_active <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Active"),
+  output_name = "tk_network_coverage_aggregated_active.csv"
+)
+```
+
+```{r}
+tk_nc_data_undetected <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Undetected"),
+  output_name = "tk_network_coverage_aggregated_undetected.csv"
+)
+```
+
+# Visualizations
+
+Based on LA Fire Situation Report
