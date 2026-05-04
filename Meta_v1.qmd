@@ -177,3 +177,86 @@ tk_nc_data_undetected <- aggregate_csvs(
 # Visualizations
 
 Based on LA Fire Situation Report
+
+## Latitude and Longitude
+```{r}
+# convert latitude/longitude points into sf objects, then join them to county polygons
+library(sf)
+library(dplyr)
+library(tigris)
+
+options(tigris_use_cache = TRUE)
+
+# Get US county boundaries
+counties_sf <- counties(cb = TRUE, year = 2023) %>%
+  st_transform(4326) %>%
+  select(
+    county_state = STATE_NAME,
+    county_name = NAME,
+    county_geoid = GEOID,
+    geometry
+  )
+```
+
+
+```{r}
+# Assign coordinates to counties
+add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
+  
+  points_sf <- df %>%
+    filter(!is.na(.data[[lat_col]]), !is.na(.data[[lon_col]])) %>%
+    st_as_sf(
+      coords = c(lon_col, lat_col),
+      crs = 4326,
+      remove = FALSE
+    )
+  
+  joined <- st_join(points_sf, counties_sf, join = st_within)
+  
+  joined %>%
+    st_drop_geometry() %>%
+    rename(
+      "{prefix}county_state" := county_state,
+      "{prefix}county_name" := county_name,
+      "{prefix}county_geoid" := county_geoid
+    )
+}
+```
+
+## General
+### Business Activity
+```{r}
+ba_data <- add_county_from_coords(
+  df = ba_data,
+  lat_col = "latitude",
+  lon_col = "longitude",
+  prefix = ""
+)
+```
+
+### Movement Between Places
+```{r, execute = FALSE}
+# Origin
+mp_data<- add_county_from_coords(
+  df = mp_data,
+  lat_col = "start_latitude",
+  lon_col = "start_longitude",
+  prefix = "start_"
+)
+
+# Destination
+mp_data_counties <- add_county_from_coords(
+  df = mp_data_origin_counties,
+  lat_col = "end_latitude",
+  lon_col = "end_longitude",
+  prefix = "end_"
+)
+
+```
+
+
+## Tennessee Kentucky 
+```{r}
+
+```
+

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Data
 data/
 *.xlsx
@@ -20,5 +19,4 @@ __pycache__/
 
 .vscode
 .Rproj.user
-=======
->>>>>>> e30aa4d (Fixing data reads)
+
