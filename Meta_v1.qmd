@@ -234,7 +234,7 @@ ba_data <- add_county_from_coords(
 )
 ```
 
-### Movement Between Places
+### Movement Between Places (In progress/runtime issues)
 ```{r, execute = FALSE}
 # Origin
 mp_data<- add_county_from_coords(
@@ -256,7 +256,81 @@ mp_data_counties <- add_county_from_coords(
 
 
 ## Tennessee Kentucky 
+### Movement Between Places 
 ```{r}
+# Administrative Regions
+# Origin counties
+tk_mp_data_admin <- add_county_from_coords(
+  df = tk_mp_data_admin,
+  lat_col = "start_latitude",
+  lon_col = "start_longitude",
+  prefix = "start_"
+)
 
+# Destination counties
+tk_mp_data_admin <- add_county_from_coords(
+  df = tk_mp_data_admin,
+  lat_col = "end_latitude",
+  lon_col = "end_longitude",
+  prefix = "end_"
+)
+
+# Bing Tiles
+# Origin counties
+tk_mp_data_bing <- add_county_from_coords(
+  df = tk_mp_data_bing,
+  lat_col = "start_latitude",
+  lon_col = "start_longitude",
+  prefix = "start_"
+)
+
+# Destination counties
+tk_mp_data_bing <- add_county_from_coords(
+  df = tk_mp_data_bing,
+  lat_col = "end_latitude",
+  lon_col = "end_longitude",
+  prefix = "end_"
+)
+```
+
+### Facebook Population
+```{r}
+# Administrative Regions
+
+tk_fb_data_admin <- add_county_from_coords(
+  df = tk_fb_data_admin,
+  lat_col = "latitude",
+  lon_col = "longitude",
+  prefix = ""
+)
+
+# Bing Tiles
+
+tk_fb_data_bing <- add_county_from_coords(
+  df = tk_fb_data_bing,
+  lat_col = "latitude",
+  lon_col = "longitude",
+  prefix = ""
+)
+
+
+```
+
+### Network Coverage
+```{r}
+# Active
+tk_nc_data_active <- add_county_from_coords(
+  df = tk_nc_data_active,
+  lat_col = "latitude",
+  lon_col = "longitude",
+  prefix = ""
+)
+
+tk_nc_data_undetected <- add_county_from_coords(
+  df = tk_nc_data_undetected,
+  lat_col = "latitude",
+  lon_col = "longitude",
+  prefix = ""
+)
 ```
 
