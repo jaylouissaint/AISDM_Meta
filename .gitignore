@@ -19,7 +19,6 @@ __pycache__/
 .DS_Store
 
 .vscode
-=======
-data/large_file.csv
 .Rproj.user
+=======
 >>>>>>> e30aa4d (Fixing data reads)
