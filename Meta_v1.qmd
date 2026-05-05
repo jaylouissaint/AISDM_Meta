@@ -3,6 +3,8 @@ title: "Meta Data"
 execute: 
   warning: false
   message: false
+  output: false
+  echo: false
 fig-pos: H
 format:
   pdf:
@@ -10,14 +12,14 @@ format:
     pdf-engine: xelatex
 ---
 
-# Data
-
-## Functions
-
-### Latitude and Longitude
-
 
 ```{r}
+##### ------ DATA ------ #####
+
+##### ------ FUNCTIONS ------ #####
+
+##### ------ Latitutde and Longitude ------ #####
+
 # Assign coordinates to counties
 
 # convert latitude/longitude points into sf objects, then join them to county polygons
@@ -63,8 +65,9 @@ add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
 }
 ```
 
-### Aggregate CSVs
 ```{r}
+##### ------ Aggregate CSVs ------ #####
+
 aggregate_csvs <- function(path_parts,
                            output_name = "aggregated.csv",
                            dedupe = TRUE,
@@ -150,8 +153,9 @@ aggregate_csvs <- function(path_parts,
 }
 ```
 
-### Summary Statistics
+
 ```{r}
+##### ------ Summary statistics ------ #####
 analyze_dataset <- function(df) {
   list(
     missing = df %>%
@@ -167,10 +171,11 @@ analyze_dataset <- function(df) {
   )
 }
 ```
-## General
-### Business Activity
+
 
 ```{r}
+##### ------ GENERAL ------ #####
+##### ------ Business Activity ------ #####
 ba_data <- aggregate_csvs(
   path_parts = c("Fern_General", "Business_Activity"),
   output_name = "business_activity_aggregated.csv",
@@ -179,9 +184,9 @@ ba_data <- aggregate_csvs(
   prefix = "")
 ```
 
-### DO NOT RUN - Movement Between Places (Experiencing runtime issues)
 
 ```{r, execute=FALSE}
+### DO NOT RUN - Movement Between Places (Experiencing runtime issues)
 mp_data <- aggregate_csvs(
   path_parts = c("Fern_General", "Movement_between_Places"),
   output_name = "movement_between_places_aggregated.csv"
@@ -205,18 +210,21 @@ mp_data <- add_county_from_coords(
 
 ```
 
-### Summary Statistics
+
 
 ```{r}
+##### ------ Summary Statistics ------ #####
 analyze_dataset(ba_data)
 analyze_dataset(mp_data)
 ```
 
-## Tennessee_Kentucky
 
-### Movement Between Places During a Crisis
 
 ```{r}
+##### ------ Tennessee Kentucky ------ #####
+
+##### ------ Movement Between Places During a Crisis ------ #####
+
 tk_mp_data_admin <- aggregate_csvs(
   path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Administrative_Regions"),
   output_name = "tk_movement_between_places_aggregated_admin.csv"
@@ -264,9 +272,8 @@ tk_mp_data_bing <- add_county_from_coords(
 )
 ```
 
-### Facebook Population during crisis
-
 ```{r}
+##### ------ Facebook Population during crisis ------ #####
 tk_fb_data_admin <- aggregate_csvs(
   path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Administrative_Regions"),
   output_name = "tk_facebook_pop_aggregated_admin.csv",
@@ -286,9 +293,11 @@ tk_fb_data_bing <- aggregate_csvs(
 )
 ```
 
-### Network Coverage
-
 ```{r}
+
+##### ------ Network Coverage ------ #####
+
+
 tk_nc_data_active <- aggregate_csvs(
   path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Active"),
   output_name = "tk_network_coverage_aggregated_active.csv",
@@ -307,7 +316,6 @@ tk_nc_data_undetected <- aggregate_csvs(
   prefix = ""
 )
 ```
-
 
 # Visualizations
 
@@ -377,33 +385,33 @@ make_percent_change_map <- function(file_name,
 ```
 
 
-```{r}
+```{r, eval = F}
 # Not working because of earlier runtime error do not delete
 make_percent_change_map(
   file_name = "movement_between_places_aggregated.csv"
 )
 ```
 
-```{r}
+```{r, output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv"
 )
 ```
 
-```{r}
+```{r, output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_admin.csv"
 )
 ```
 
-```{r}
+```{r, eval=F}
 # Not working because of earlier runtime error do not delete
 make_percent_change_map(
   file_name = "tk_movement_between_places_aggregated_admin.csv"
 )
 ```
 
-```{r}
+```{r, eval =F}
 # Not working because of earlier runtime error do not delete
 make_percent_change_map(
   file_name = "tk_movement_between_places_aggregated_bing.csv"
@@ -413,7 +421,7 @@ make_percent_change_map(
 
 ## Time series
 
-```{r}
+```{r, output = T}
 top_counties <- tk_fb_data_admin %>%
   group_by(county_geoid, county_name) %>%
   summarise(
@@ -446,7 +454,7 @@ ggplot(fb_time, aes(x = ds, y = mean_percent_change)) +
   theme_minimal()
 ```
 
-```{r}
+```{r, output = T}
 network_time <- tk_nc_data_active %>%
   mutate(ds = as.Date(ds)) %>%
   group_by(ds, county_name) %>%
@@ -469,7 +477,7 @@ ggplot(network_time, aes(x = ds, y = pct_coverage)) +
 ```
 
 
-```{r}
+```{r, output = T}
 county_flows <- tk_mp_data_admin %>%
   group_by(start_county_name, end_county_name) %>%
   summarise(
