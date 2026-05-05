@@ -12,175 +12,21 @@ format:
 
 # Data
 
-## Fern General
+## Functions
 
-### Functions
+### Latitude and Longitude
 
-```{r}
-library(readr)
-library(dplyr)
-library(here)
-
-aggregate_csvs <- function(path_parts,
-                           output_name = "aggregated.csv",
-                           dedupe = TRUE) {
-  
-  # Build directory path using here()
-  data_dir <- do.call(here::here, as.list(path_parts))
-  
-  cat("Reading from:", data_dir, "\n")
-  
-  if (!dir.exists(data_dir)) {
-    stop("Directory does not exist: ", data_dir)
-  }
-  
-  # Get CSV files
-  csv_files <- list.files(
-    path = data_dir,
-    pattern = "\\.csv$",
-    full.names = TRUE
-  )
-  
-  if (length(csv_files) == 0) {
-    stop("No CSV files found in: ", data_dir)
-  }
-  
-  cat("Found", length(csv_files), "files\n")
-  
-  # Read and combine
-  combined_data <- lapply(csv_files, function(f) {
-    read_csv(f, show_col_types = FALSE) %>%
-      mutate(source_file = basename(f))
-  }) %>%
-    bind_rows()
-  
-  # Deduplicate (optional)
-  if (dedupe) {
-    combined_data_dedup <- combined_data %>% distinct()
-  } else {
-    combined_data_dedup <- combined_data
-  }
-  
-  # Output path at project root
-  output_dir <- here::here("outputs")
-  
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir, recursive = TRUE)
-  }
-  
-  output_file <- file.path(output_dir, output_name)
-  
-  # Write file
-  write_csv(combined_data_dedup, output_file)
-  
-  # Logs
-  cat("Saved to:", output_file, "\n")
-  cat("Rows before dedupe:", nrow(combined_data), "\n")
-  cat("Rows after dedupe:", nrow(combined_data_dedup), "\n")
-  
-  return(combined_data_dedup)
-}
-```
 
 ```{r}
-analyze_dataset <- function(df) {
-  list(
-    missing = df %>%
-      summarise(across(everything(), ~mean(is.na(.)))),
+# Assign coordinates to counties
 
-    numeric_summary = df %>%
-      summarise(across(where(is.numeric),
-                       list(mean = mean, sd = sd),
-                       na.rm = TRUE)),
-
-    n_rows = nrow(df),
-    n_cols = ncol(df)
-  )
-}
-```
-
-### Business Activity
-
-```{r}
-ba_data <- aggregate_csvs(
-  path_parts = c("Fern_General", "Business_Activity"),
-  output_name = "business_activity_aggregated.csv"
-)
-```
-
-### Movement Between Places
-
-```{r}
-mp_data <- aggregate_csvs(
-  path_parts = c("Fern_General", "Movement_between_Places"),
-  output_name = "movement_between_places_aggregated.csv"
-)
-```
-
-### Summary Statistics
-
-```{r}
-analyze_dataset(ba_data)
-analyze_dataset(mp_data)
-```
-
-## Tennessee_Kentucky
-
-### Movement Between Places During a Crisis
-
-```{r}
-tk_mp_data_admin <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Administrative_Regions"),
-  output_name = "tk_movement_between_places_aggregated_admin.csv"
-)
-```
-
-```{r}
-tk_mp_data_bing <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Bing_Tiles"),
-  output_name = "tk_movement_between_places_aggregated_bing.csv"
-)
-```
-
-### Facebook Population during crisis
-
-```{r}
-tk_fb_data_admin <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Administrative_Regions"),
-  output_name = "tk_facebook_pop_aggregated_admin.csv"
-)
-```
-
-```{r}
-tk_fb_data_bing <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Bing_Tiles"),
-  output_name = "tk_facebook_pop_aggregated_bing.csv"
-)
-```
-
-### Network Coverage
-
-```{r}
-tk_nc_data_active <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Active"),
-  output_name = "tk_network_coverage_aggregated_active.csv"
-)
-```
-
-```{r}
-tk_nc_data_undetected <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Undetected"),
-  output_name = "tk_network_coverage_aggregated_undetected.csv"
-)
-```
-
-## Latitude and Longitude
-
-```{r}
 # convert latitude/longitude points into sf objects, then join them to county polygons
 library(sf)
 library(dplyr)
 library(tigris)
+library(readr)
+library(dplyr)
+library(here)
 
 options(tigris_use_cache = TRUE)
 
@@ -193,10 +39,8 @@ counties_sf <- counties(cb = TRUE, year = 2023) %>%
     county_geoid = GEOID,
     geometry
   )
-```
 
-```{r}
-# Assign coordinates to counties
+
 add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
   
   points_sf <- df %>%
@@ -219,22 +63,123 @@ add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
 }
 ```
 
-## General
+### Aggregate CSVs
+```{r}
+aggregate_csvs <- function(path_parts,
+                           output_name = "aggregated.csv",
+                           dedupe = TRUE,
+                           lat_col = NULL,
+                           lon_col = NULL,
+                           prefix = "") {
+  
+  data_dir <- do.call(here::here, as.list(path_parts))
+  
+  cat("Reading from:", data_dir, "\n")
+  
+  # Stop execution if the directory does not exist
+  if (!dir.exists(data_dir)) {
+    stop("Directory does not exist: ", data_dir)
+  }
+  
+  # Get all CSV files in the directory
+  csv_files <- list.files(
+    path = data_dir,
+    pattern = "\\.csv$",
+    full.names = TRUE
+  )
+  
+  # Stop if no CSV files are found
+  if (length(csv_files) == 0) {
+    stop("No CSV files found in: ", data_dir)
+  }
+  
+  cat("Found", length(csv_files), "files\n")
+  
+  # Read each CSV file and add a column indicating its source file
+  # Then combine all files into a single dataframe
+  combined_data <- lapply(csv_files, function(f) {
+    read_csv(f, show_col_types = FALSE) %>%
+      mutate(source_file = basename(f))
+  }) %>%
+    bind_rows()
+  
+  # Remove exact duplicate rows
+  if (dedupe) {
+    combined_data <- combined_data %>% distinct()
+  }
+  
+  # If latitude and longitude columns are provided, assign each row to a county using spatial join
+  if (!is.null(lat_col) && !is.null(lon_col)) {
+    cat("Adding county identifiers...\n")
+    
+    combined_data <- add_county_from_coords(
+      df = combined_data,
+      lat_col = lat_col,
+      lon_col = lon_col,
+      prefix = prefix   # allows naming like start_county_*, end_county_*
+    )
+  }
+  
+  # Define output directory at the project root (outputs/)
+  output_dir <- here::here("outputs")
+  
+  # Create the directory if it doesn't already exist
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+  
+  # Build full output file path
+  output_file <- file.path(output_dir, output_name)
+  
+  # Write the combined dataset to CSV
+  write_csv(combined_data, output_file)
+  
+  # Print basic logging info
+  cat("Saved to:", output_file, "\n")
+  cat("Rows:", nrow(combined_data), "\n")
+  
+  # Return the final dataframe to the environment
+  return(combined_data)
+}
+```
 
+### Summary Statistics
+```{r}
+analyze_dataset <- function(df) {
+  list(
+    missing = df %>%
+      summarise(across(everything(), ~mean(is.na(.)))),
+
+    numeric_summary = df %>%
+      summarise(across(where(is.numeric),
+                       list(mean = mean, sd = sd),
+                       na.rm = TRUE)),
+
+    n_rows = nrow(df),
+    n_cols = ncol(df)
+  )
+}
+```
+## General
 ### Business Activity
 
 ```{r}
-ba_data <- add_county_from_coords(
-  df = ba_data,
+ba_data <- aggregate_csvs(
+  path_parts = c("Fern_General", "Business_Activity"),
+  output_name = "business_activity_aggregated.csv",
   lat_col = "latitude",
   lon_col = "longitude",
-  prefix = ""
-)
+  prefix = "")
 ```
 
-### Movement Between Places (In progress/runtime issues)
+### DO NOT RUN - Movement Between Places (Experiencing runtime issues)
 
-```{r, execute = FALSE}
+```{r, execute=FALSE}
+mp_data <- aggregate_csvs(
+  path_parts = c("Fern_General", "Movement_between_Places"),
+  output_name = "movement_between_places_aggregated.csv"
+)
+
 # Origin
 mp_data<- add_county_from_coords(
   df = mp_data,
@@ -244,8 +189,8 @@ mp_data<- add_county_from_coords(
 )
 
 # Destination
-mp_data_counties <- add_county_from_coords(
-  df = mp_data_origin_counties,
+mp_data <- add_county_from_coords(
+  df = mp_data,
   lat_col = "end_latitude",
   lon_col = "end_longitude",
   prefix = "end_"
@@ -253,11 +198,22 @@ mp_data_counties <- add_county_from_coords(
 
 ```
 
-## Tennessee Kentucky
-
-### Movement Between Places
+### Summary Statistics
 
 ```{r}
+analyze_dataset(ba_data)
+analyze_dataset(mp_data)
+```
+
+## Tennessee_Kentucky
+
+### Movement Between Places During a Crisis
+
+```{r}
+tk_mp_data_admin <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Administrative_Regions"),
+  output_name = "tk_movement_between_places_aggregated_admin.csv"
+)
 # Administrative Regions
 # Origin counties
 tk_mp_data_admin <- add_county_from_coords(
@@ -273,6 +229,14 @@ tk_mp_data_admin <- add_county_from_coords(
   lat_col = "end_latitude",
   lon_col = "end_longitude",
   prefix = "end_"
+)
+
+```
+
+```{r}
+tk_mp_data_bing <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Bing_Tiles"),
+  output_name = "tk_movement_between_places_aggregated_bing.csv"
 )
 
 # Bing Tiles
@@ -293,52 +257,56 @@ tk_mp_data_bing <- add_county_from_coords(
 )
 ```
 
-### Facebook Population
+### Facebook Population during crisis
 
 ```{r}
-# Administrative Regions
-
-tk_fb_data_admin <- add_county_from_coords(
-  df = tk_fb_data_admin,
+tk_fb_data_admin <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Administrative_Regions"),
+  output_name = "tk_facebook_pop_aggregated_admin.csv",
   lat_col = "latitude",
   lon_col = "longitude",
   prefix = ""
 )
+```
 
-# Bing Tiles
-
-tk_fb_data_bing <- add_county_from_coords(
-  df = tk_fb_data_bing,
+```{r}
+tk_fb_data_bing <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Bing_Tiles"),
+  output_name = "tk_facebook_pop_aggregated_bing.csv",
   lat_col = "latitude",
   lon_col = "longitude",
   prefix = ""
 )
-
-
 ```
 
 ### Network Coverage
 
 ```{r}
-# Active
-tk_nc_data_active <- add_county_from_coords(
-  df = tk_nc_data_active,
-  lat_col = "latitude",
-  lon_col = "longitude",
-  prefix = ""
-)
-
-tk_nc_data_undetected <- add_county_from_coords(
-  df = tk_nc_data_undetected,
-  lat_col = "latitude",
-  lon_col = "longitude",
+tk_nc_data_active <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Active"),
+  output_name = "tk_network_coverage_aggregated_active.csv",
+  lat_col = "lat",
+  lon_col = "lon",
   prefix = ""
 )
 ```
 
+```{r}
+tk_nc_data_undetected <- aggregate_csvs(
+  path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Undetected"),
+  output_name = "tk_network_coverage_aggregated_undetected.csv",
+  lat_col = "lat",
+  lon_col = "lon",
+  prefix = ""
+)
+```
+
+
 # Visualizations
 
 Based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
+
+## Maps
 
 ```{r}
 library(ggplot2)
@@ -346,32 +314,103 @@ library(gt)
 library(scales)
 library(lubridate)
 
-latest_date <- max(tk_fb_data_admin$ds, na.rm = TRUE)
-
-fb_latest_county <- tk_fb_data_admin %>%
-  filter(ds == latest_date) %>%
-  group_by(county_geoid, county_name, county_state) %>%
-  summarise(
-    mean_percent_change = mean(percent_change, na.rm = TRUE),
-    baseline_pop = sum(n_baseline, na.rm = TRUE),
-    crisis_pop = sum(n_crisis, na.rm = TRUE),
-    .groups = "drop"
+# Need to update so date can be chosen not just latest date; Check if i can do default arguments in r like in Python
+make_percent_change_map <- function(file_name,
+                                    date_col = "ds",
+                                    value_col = "percent_change",
+                                    output_plot_name = NULL,
+                                    title_prefix = "Population Density Change on") {
+  
+  # Read file from root outputs folder
+  df <- read_csv(
+    here("outputs", file_name),
+    show_col_types = FALSE
   )
-
-fb_map <- counties_sf %>%
-  inner_join(fb_latest_county, by = "county_geoid")
-
-ggplot(fb_map) +
-  geom_sf(aes(fill = mean_percent_change), linewidth = 0.2) +
-  scale_fill_gradient2(
-    labels = label_number(suffix = "%", accuracy = 1)
-  ) +
-  labs(
-    title = paste("Population Density Change on", latest_date),
-    fill = "% Change vs Baseline"
-  ) +
-  theme_minimal()
+  
+  # Find latest date
+  latest_date <- max(df[[date_col]], na.rm = TRUE)
+  
+  # Summarize to county level
+  latest_county <- df %>%
+    filter(.data[[date_col]] == latest_date) %>%
+    group_by(county_geoid, county_name, county_state) %>%
+    summarise(
+      mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  # Join to county geometries
+  map_data <- counties_sf %>%
+    inner_join(latest_county, by = "county_geoid")
+  
+  # Build map
+  p <- ggplot(map_data) +
+    geom_sf(aes(fill = mean_percent_change), linewidth = 0.2) +
+    scale_fill_gradient2(
+      labels = label_number(suffix = "%", accuracy = 1)
+    ) +
+    labs(
+      title = paste(title_prefix, latest_date),
+      fill = "% Change vs Baseline"
+    ) +
+    theme_minimal()
+  
+  # Save plot if requested
+  if (!is.null(output_plot_name)) {
+    ggsave(
+      filename = here("outputs", output_plot_name),
+      plot = p,
+      width = 10,
+      height = 7
+    )
+  }
+  
+  return(p)
+}
 ```
-Check how we're getting 
+
+
+```{r}
+# Not working because of earlier runtime error do not delete
+make_percent_change_map(
+  file_name = "movement_between_places_aggregated.csv"
+)
+```
+
+```{r}
+make_percent_change_map(
+  file_name = "tk_facebook_pop_aggregated_bing.csv"
+)
+```
+
+```{r}
+make_percent_change_map(
+  file_name = "tk_facebook_pop_aggregated_admin.csv"
+)
+```
+
+```{r}
+# Not working because of earlier runtime error do not delete
+make_percent_change_map(
+  file_name = "tk_movement_between_places_aggregated_admin.csv"
+)
+```
+
+```{r}
+# Not working because of earlier runtime error do not delete
+make_percent_change_map(
+  file_name = "tk_movement_between_places_aggregated_bing.csv"
+)
+```
+
+
+## Time series
+
+```{r}
+
+```
+
+
+
 
 
