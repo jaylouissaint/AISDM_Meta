@@ -1,5 +1,5 @@
 ---
-title: "Meta Data"
+title: "Winter Storm Fern Situation Report - January 2026"
 execute: 
   warning: false
   message: false
@@ -33,8 +33,8 @@ library(here)
 options(tigris_use_cache = TRUE)
 
 # Get US county boundaries
-counties_sf <- counties(cb = TRUE, year = 2023) %>%
-  st_transform(4326) %>%
+counties_sf <- counties(cb = TRUE, year = 2023) |>
+  st_transform(4326) |>
   select(
     county_state = STATE_NAME,
     county_name = NAME,
@@ -45,8 +45,8 @@ counties_sf <- counties(cb = TRUE, year = 2023) %>%
 
 add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
   
-  points_sf <- df %>%
-    filter(!is.na(.data[[lat_col]]), !is.na(.data[[lon_col]])) %>%
+  points_sf <- df |>
+    filter(!is.na(.data[[lat_col]]), !is.na(.data[[lon_col]])) |>
     st_as_sf(
       coords = c(lon_col, lat_col),
       crs = 4326,
@@ -55,8 +55,8 @@ add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
   
   joined <- st_join(points_sf, counties_sf, join = st_within)
   
-  joined %>%
-    st_drop_geometry() %>%
+  joined |>
+    st_drop_geometry() |>
     rename(
       "{prefix}county_state" := county_state,
       "{prefix}county_name" := county_name,
@@ -101,14 +101,14 @@ aggregate_csvs <- function(path_parts,
   # Read each CSV file and add a column indicating its source file
   # Then combine all files into a single dataframe
   combined_data <- lapply(csv_files, function(f) {
-    read_csv(f, show_col_types = FALSE) %>%
+    read_csv(f, show_col_types = FALSE) |>
       mutate(source_file = basename(f))
-  }) %>%
+  }) |>
     bind_rows()
   
   # Remove exact duplicate rows
   if (dedupe) {
-    combined_data <- combined_data %>% distinct()
+    combined_data <- combined_data |> distinct()
   }
   
   # If latitude and longitude columns are provided, assign each row to a county using spatial join
@@ -124,7 +124,7 @@ aggregate_csvs <- function(path_parts,
   }
   
   # Extract date and time from file names for data sets that don't contain them
-  combined_data <- combined_data %>%
+  combined_data <- combined_data |>
   mutate(
     ds = as.Date(sub(".*_(\\d{4}-\\d{2}-\\d{2})_.*", "\\1", source_file)),
     hour = sub(".*_(\\d{4}-\\d{2}-\\d{2})_(\\d{4}).*", "\\2", source_file)
@@ -158,10 +158,10 @@ aggregate_csvs <- function(path_parts,
 ##### ------ Summary statistics ------ #####
 analyze_dataset <- function(df) {
   list(
-    missing = df %>%
+    missing = df |>
       summarise(across(everything(), ~mean(is.na(.)))),
 
-    numeric_summary = df %>%
+    numeric_summary = df |>
       summarise(across(where(is.numeric),
                        list(mean = mean, sd = sd),
                        na.rm = TRUE)),
@@ -317,11 +317,17 @@ tk_nc_data_undetected <- aggregate_csvs(
 )
 ```
 
-# Visualizations
 
-Based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
+Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
 
-## Maps
+# Summary
+
+A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23 and continued through January 26th. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Several states experienced network outages and extremely cold temperatures.
+
+The following visualizations are developed based on Meta AI for Good's data through Facebook. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
+
+
+# Movement
 
 ```{r}
 library(ggplot2)
@@ -346,16 +352,16 @@ make_percent_change_map <- function(file_name,
   latest_date <- max(df[[date_col]], na.rm = TRUE)
   
   # Summarize to county level
-  latest_county <- df %>%
-    filter(.data[[date_col]] == latest_date) %>%
-    group_by(county_geoid, county_name, county_state) %>%
+  latest_county <- df |>
+    filter(.data[[date_col]] == latest_date) |>
+    group_by(county_geoid, county_name, county_state) |>
     summarise(
       mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
       .groups = "drop"
     )
   
   # Join to county geometries
-  map_data <- counties_sf %>%
+  map_data <- counties_sf |>
     inner_join(latest_county, by = "county_geoid")
   
   # Build map
@@ -392,13 +398,17 @@ make_percent_change_map(
 )
 ```
 
-```{r, output = T}
+## % Population Density Change
+
+Note the difference in @fig-pop-bing, which is based on Bing tiles, and @fig-pop-admin, which is based on administrative regions.
+
+```{r fig-pop-bing, fig.cap = "Based on the Bing tiles, there are only a few counties with strong population density changes.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv"
 )
 ```
 
-```{r, output = T}
+```{r fig-pop-admin, fig.cap = "Based on the administrative regions, there are two counties with strong population density changes, one positively and one negatively.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_admin.csv"
 )
@@ -419,22 +429,22 @@ make_percent_change_map(
 ```
 
 
-## Time series
+## Time Series of Movement
 
-```{r, output = T}
-top_counties <- tk_fb_data_admin %>%
-  group_by(county_geoid, county_name) %>%
+```{r fig-time-series, fig.cap = "There are strong difference in population changes across different counties", output = T}
+top_counties <- tk_fb_data_admin |>
+  group_by(county_geoid, county_name) |>
   summarise(
     max_abs_change = max(abs(percent_change), na.rm = TRUE),
     .groups = "drop"
-  ) %>%
-  slice_max(max_abs_change, n = 20) %>%
+  ) |>
+  slice_max(max_abs_change, n = 20) |>
   pull(county_geoid)
 
-fb_time <- tk_fb_data_admin %>%
-  filter(county_geoid %in% top_counties) %>%
-  mutate(ds = as.Date(ds)) %>%
-  group_by(ds, county_geoid, county_name) %>%
+fb_time <- tk_fb_data_admin |>
+  filter(county_geoid %in% top_counties) |>
+  mutate(ds = as.Date(ds)) |>
+  group_by(ds, county_geoid, county_name) |>
   summarise(
     mean_percent_change = mean(percent_change, na.rm = TRUE),
     .groups = "drop"
@@ -454,10 +464,16 @@ ggplot(fb_time, aes(x = ds, y = mean_percent_change)) +
   theme_minimal()
 ```
 
-```{r, output = T}
-network_time <- tk_nc_data_active %>%
-  mutate(ds = as.Date(ds)) %>%
-  group_by(ds, county_name) %>%
+# Vulnerability
+
+## Power Outages
+
+As shown in @fig-network-coverage, ...
+
+```{r fig-network-coverage, fig.cap = "Insert caption here.", output = T}
+network_time <- tk_nc_data_active |>
+  mutate(ds = as.Date(ds)) |>
+  group_by(ds, county_name) |>
   summarise(
     pct_coverage = mean(coverage, na.rm = TRUE),
     .groups = "drop"
@@ -476,23 +492,23 @@ ggplot(network_time, aes(x = ds, y = pct_coverage)) +
   theme_minimal()
 ```
 
+## Places
 
-```{r, output = T}
-county_flows <- tk_mp_data_admin %>%
-  group_by(start_county_name, end_county_name) %>%
+As shown by @tbl-summary-table, ...
+
+```{r tbl-summary-table, tbl.cap = "Bottom 20 county-to-county crisis movement flows", output = T}
+county_flows <- tk_mp_data_admin |>
+  group_by(start_county_name, end_county_name) |>
   summarise(
     total_crisis_movement = sum(n_crisis, na.rm = TRUE),
     avg_z_score = mean(z_score, na.rm = TRUE),
     .groups = "drop"
-  ) %>%
+  ) |>
   arrange(desc(total_crisis_movement))
 
-county_flows %>%
-  slice_tail(n = 20) %>%
-  gt() %>%
-  tab_header(
-    title = "Bottom County-to-County Movement Flows"
-  )
+county_flows |>
+  slice_tail(n = 20) |>
+  gt()
 
 # Top 20 wasn't very interesting. Bottom 20 says something more informative 
 ```
