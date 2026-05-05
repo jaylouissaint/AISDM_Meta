@@ -120,6 +120,13 @@ aggregate_csvs <- function(path_parts,
     )
   }
   
+  # Extract date and time from file names for data sets that don't contain them
+  combined_data <- combined_data %>%
+  mutate(
+    ds = as.Date(sub(".*_(\\d{4}-\\d{2}-\\d{2})_.*", "\\1", source_file)),
+    hour = sub(".*_(\\d{4}-\\d{2}-\\d{2})_(\\d{4}).*", "\\2", source_file)
+  )
+  
   # Define output directory at the project root (outputs/)
   output_dir <- here::here("outputs")
   
@@ -407,9 +414,80 @@ make_percent_change_map(
 ## Time series
 
 ```{r}
+top_counties <- tk_fb_data_admin %>%
+  group_by(county_geoid, county_name) %>%
+  summarise(
+    max_abs_change = max(abs(percent_change), na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  slice_max(max_abs_change, n = 20) %>%
+  pull(county_geoid)
 
+fb_time <- tk_fb_data_admin %>%
+  filter(county_geoid %in% top_counties) %>%
+  mutate(ds = as.Date(ds)) %>%
+  group_by(ds, county_geoid, county_name) %>%
+  summarise(
+    mean_percent_change = mean(percent_change, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(fb_time, aes(x = ds, y = mean_percent_change)) +
+  geom_hline(yintercept = 0, linewidth = 0.3) +
+  geom_line(linewidth = 0.6) +
+  geom_point(size = 1) +
+  facet_wrap(~ county_name, scales = "free_y") +
+  scale_y_continuous() +
+  labs(
+    title = "% Population Density Change Over Time",
+    x = NULL,
+    y = "% Change vs Baseline"
+  ) +
+  theme_minimal()
 ```
 
+```{r}
+network_time <- tk_nc_data_active %>%
+  mutate(ds = as.Date(ds)) %>%
+  group_by(ds, county_name) %>%
+  summarise(
+    pct_coverage = mean(coverage, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(network_time, aes(x = ds, y = pct_coverage)) +
+  geom_line(linewidth = 0.6) +
+  geom_point(size = 1) +
+  facet_wrap(~ county_name) +
+  scale_y_continuous() +
+  labs(
+    title = "Network Coverage Over Time",
+    x = NULL,
+    y = "Coverage"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+county_flows <- tk_mp_data_admin %>%
+  group_by(start_county_name, end_county_name) %>%
+  summarise(
+    total_crisis_movement = sum(n_crisis, na.rm = TRUE),
+    avg_z_score = mean(z_score, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_crisis_movement))
+
+county_flows %>%
+  slice_tail(n = 20) %>%
+  gt() %>%
+  tab_header(
+    title = "Bottom County-to-County Movement Flows"
+  )
+
+# Top 20 wasn't very interesting. Bottom 20 says something more informative 
+```
 
 
 
