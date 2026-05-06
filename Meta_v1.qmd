@@ -27,7 +27,6 @@ library(sf)
 library(dplyr)
 library(tigris)
 library(readr)
-library(dplyr)
 library(here)
 
 options(tigris_use_cache = TRUE)
