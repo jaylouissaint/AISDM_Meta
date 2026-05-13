@@ -11,14 +11,10 @@ format:
     colorlinks: true
     pdf-engine: xelatex
 ---
-
+# FUNCTIONS
+## Latitude and Longitude 
 
 ```{r}
-##### ------ DATA ------ #####
-
-##### ------ FUNCTIONS ------ #####
-
-##### ------ Latitutde and Longitude ------ #####
 
 # Assign coordinates to counties
 
@@ -64,9 +60,9 @@ add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
 }
 ```
 
-```{r}
-##### ------ Aggregate CSVs ------ #####
 
+## Aggregate CSVs
+```{r}
 aggregate_csvs <- function(path_parts,
                            output_name = "aggregated.csv",
                            dedupe = TRUE,
@@ -129,8 +125,8 @@ aggregate_csvs <- function(path_parts,
     hour = sub(".*_(\\d{4}-\\d{2}-\\d{2})_(\\d{4}).*", "\\2", source_file)
   )
   
-  # Define output directory at the project root (outputs/)
-  output_dir <- here::here("outputs")
+  # Define output directory at the project root (Outputs/)
+  output_dir <- here::here("Outputs")
   
   # Create the directory if it doesn't already exist
   if (!dir.exists(output_dir)) {
@@ -152,9 +148,59 @@ aggregate_csvs <- function(path_parts,
 }
 ```
 
-
+## Fast Aggregate Counties
 ```{r}
-##### ------ Summary statistics ------ #####
+add_movement_counties_fast <- function(df,
+                                       start_lat = "start_latitude",
+                                       start_lon = "start_longitude",
+                                       end_lat = "end_latitude",
+                                       end_lon = "end_longitude") {
+  
+  # County lookup for unique origin coordinates only
+  start_lookup <- df %>%
+    distinct(
+      .data[[start_lat]],
+      .data[[start_lon]]
+    ) %>%
+    add_county_from_coords(
+      lat_col = start_lat,
+      lon_col = start_lon,
+      prefix = "start_"
+    )
+  
+  # Join origin county fields back to full data
+  df <- df %>%
+    left_join(
+      start_lookup,
+      by = setNames(c(start_lat, start_lon), c(start_lat, start_lon))
+    )
+  
+  # County lookup for unique destination coordinates only
+  end_lookup <- df %>%
+    distinct(
+      .data[[end_lat]],
+      .data[[end_lon]]
+    ) %>%
+    add_county_from_coords(
+      lat_col = end_lat,
+      lon_col = end_lon,
+      prefix = "end_"
+    )
+  
+  # Join destination county fields back to full data
+  df <- df %>%
+    left_join(
+      end_lookup,
+      by = setNames(c(end_lat, end_lon), c(end_lat, end_lon))
+    )
+  
+  return(df)
+}
+```
+
+
+## Summary Statistics
+```{r}
 analyze_dataset <- function(df) {
   list(
     missing = df |>
@@ -171,12 +217,13 @@ analyze_dataset <- function(df) {
 }
 ```
 
+# DATA AGGREGATION
+## General
 
 ```{r}
-##### ------ GENERAL ------ #####
 ##### ------ Business Activity ------ #####
 ba_data <- aggregate_csvs(
-  path_parts = c("Fern_General", "Business_Activity"),
+  path_parts = c("Data","Fern_General", "Business_Activity"),
   output_name = "business_activity_aggregated.csv",
   lat_col = "latitude",
   lon_col = "longitude",
@@ -185,26 +232,16 @@ ba_data <- aggregate_csvs(
 
 
 ```{r, execute=FALSE}
-### DO NOT RUN - Movement Between Places (Experiencing runtime issues)
 mp_data <- aggregate_csvs(
-  path_parts = c("Fern_General", "Movement_between_Places"),
+  path_parts = c("Data", "Fern_General", "Movement_between_Places"),
   output_name = "movement_between_places_aggregated.csv"
 )
 
-# Origin
-mp_data<- add_county_from_coords(
-  df = mp_data,
-  lat_col = "start_latitude",
-  lon_col = "start_longitude",
-  prefix = "start_"
-)
+mp_data <- add_movement_counties_fast(mp_data)
 
-# Destination
-mp_data <- add_county_from_coords(
-  df = mp_data,
-  lat_col = "end_latitude",
-  lon_col = "end_longitude",
-  prefix = "end_"
+write_csv(
+  mp_data,
+  here("Outputs", "movement_between_places_aggregated.csv")
 )
 
 ```
@@ -218,63 +255,43 @@ analyze_dataset(mp_data)
 ```
 
 
+## Tennessee and Kentucky
 
 ```{r}
-##### ------ Tennessee Kentucky ------ #####
-
 ##### ------ Movement Between Places During a Crisis ------ #####
 
 tk_mp_data_admin <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Administrative_Regions"),
+  path_parts = c("Data", "Tennessee_Kentucky", "Fern_Movement_Crisis", "Administrative_Regions"),
   output_name = "tk_movement_between_places_aggregated_admin.csv"
 )
-# Administrative Regions
-# Origin counties
-tk_mp_data_admin <- add_county_from_coords(
-  df = tk_mp_data_admin,
-  lat_col = "start_latitude",
-  lon_col = "start_longitude",
-  prefix = "start_"
-)
 
-# Destination counties
-tk_mp_data_admin <- add_county_from_coords(
-  df = tk_mp_data_admin,
-  lat_col = "end_latitude",
-  lon_col = "end_longitude",
-  prefix = "end_"
+tk_mp_data_admin <- add_movement_counties_fast(tk_mp_data_admin)
+
+write_csv(
+  tk_mp_data_admin,
+  here("Outputs", "tk_movement_between_places_aggregated_admin.csv")
 )
 
 ```
 
 ```{r}
 tk_mp_data_bing <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Movement_Crisis","Bing_Tiles"),
+  path_parts = c("Data", "Tennessee_Kentucky", "Fern_Movement_Crisis", "Bing_Tiles"),
   output_name = "tk_movement_between_places_aggregated_bing.csv"
 )
 
-# Bing Tiles
-# Origin counties
-tk_mp_data_bing <- add_county_from_coords(
-  df = tk_mp_data_bing,
-  lat_col = "start_latitude",
-  lon_col = "start_longitude",
-  prefix = "start_"
-)
+tk_mp_data_bing <- add_movement_counties_fast(tk_mp_data_bing)
 
-# Destination counties
-tk_mp_data_bing <- add_county_from_coords(
-  df = tk_mp_data_bing,
-  lat_col = "end_latitude",
-  lon_col = "end_longitude",
-  prefix = "end_"
+write_csv(
+  tk_mp_data_bing,
+  here("Outputs", "tk_movement_between_places_aggregated_bing.csv")
 )
 ```
 
 ```{r}
 ##### ------ Facebook Population during crisis ------ #####
 tk_fb_data_admin <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Administrative_Regions"),
+  path_parts = c("Data","Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Administrative_Regions"),
   output_name = "tk_facebook_pop_aggregated_admin.csv",
   lat_col = "latitude",
   lon_col = "longitude",
@@ -284,7 +301,7 @@ tk_fb_data_admin <- aggregate_csvs(
 
 ```{r}
 tk_fb_data_bing <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Bing_Tiles"),
+  path_parts = c("Data","Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Bing_Tiles"),
   output_name = "tk_facebook_pop_aggregated_bing.csv",
   lat_col = "latitude",
   lon_col = "longitude",
@@ -298,7 +315,7 @@ tk_fb_data_bing <- aggregate_csvs(
 
 
 tk_nc_data_active <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Active"),
+  path_parts = c("Data","Tennessee_Kentucky", "Fern_Network_Coverage","Active"),
   output_name = "tk_network_coverage_aggregated_active.csv",
   lat_col = "lat",
   lon_col = "lon",
@@ -308,7 +325,7 @@ tk_nc_data_active <- aggregate_csvs(
 
 ```{r}
 tk_nc_data_undetected <- aggregate_csvs(
-  path_parts = c("Tennessee_Kentucky", "Fern_Network_Coverage","Undetected"),
+  path_parts = c("Data","Tennessee_Kentucky", "Fern_Network_Coverage","Undetected"),
   output_name = "tk_network_coverage_aggregated_undetected.csv",
   lat_col = "lat",
   lon_col = "lon",
@@ -316,201 +333,6 @@ tk_nc_data_undetected <- aggregate_csvs(
 )
 ```
 
-
-Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
-
-# Summary
-
-A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23 and continued through January 26th. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Several states experienced network outages and extremely cold temperatures.
-
-The following visualizations are developed based on Meta AI for Good's data through Facebook. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
-
-
-# Movement
-
-```{r}
-library(ggplot2)
-library(gt)
-library(scales)
-library(lubridate)
-
-# Need to update so date can be chosen not just latest date; Check if i can do default arguments in r like in Python
-make_percent_change_map <- function(file_name,
-                                    date_col = "ds",
-                                    value_col = "percent_change",
-                                    output_plot_name = NULL,
-                                    title_prefix = "Population Density Change on") {
-  
-  # Read file from root outputs folder
-  df <- read_csv(
-    here("outputs", file_name),
-    show_col_types = FALSE
-  )
-  
-  # Find latest date
-  latest_date <- max(df[[date_col]], na.rm = TRUE)
-  
-  # Summarize to county level
-  latest_county <- df |>
-    filter(.data[[date_col]] == latest_date) |>
-    group_by(county_geoid, county_name, county_state) |>
-    summarise(
-      mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
-      .groups = "drop"
-    )
-  
-  # Join to county geometries
-  map_data <- counties_sf |>
-    inner_join(latest_county, by = "county_geoid")
-  
-  # Build map
-  p <- ggplot(map_data) +
-    geom_sf(aes(fill = mean_percent_change), linewidth = 0.2) +
-    scale_fill_gradient2(
-      labels = label_number(suffix = "%", accuracy = 1)
-    ) +
-    labs(
-      title = paste(title_prefix, latest_date),
-      fill = "% Change vs Baseline"
-    ) +
-    theme_minimal()
-  
-  # Save plot if requested
-  if (!is.null(output_plot_name)) {
-    ggsave(
-      filename = here("outputs", output_plot_name),
-      plot = p,
-      width = 10,
-      height = 7
-    )
-  }
-  
-  return(p)
-}
-```
-
-
-```{r, eval = F}
-# Not working because of earlier runtime error do not delete
-make_percent_change_map(
-  file_name = "movement_between_places_aggregated.csv"
-)
-```
-
-## % Population Density Change
-
-Note the difference in @fig-pop-bing, which is based on Bing tiles, and @fig-pop-admin, which is based on administrative regions.
-
-```{r fig-pop-bing, fig.cap = "Based on the Bing tiles, there are only a few counties with strong population density changes.", output = T}
-make_percent_change_map(
-  file_name = "tk_facebook_pop_aggregated_bing.csv"
-)
-```
-
-```{r fig-pop-admin, fig.cap = "Based on the administrative regions, there are two counties with strong population density changes, one positively and one negatively.", output = T}
-make_percent_change_map(
-  file_name = "tk_facebook_pop_aggregated_admin.csv"
-)
-```
-
-```{r, eval=F}
-# Not working because of earlier runtime error do not delete
-make_percent_change_map(
-  file_name = "tk_movement_between_places_aggregated_admin.csv"
-)
-```
-
-```{r, eval =F}
-# Not working because of earlier runtime error do not delete
-make_percent_change_map(
-  file_name = "tk_movement_between_places_aggregated_bing.csv"
-)
-```
-
-
-## Time Series of Movement
-
-```{r fig-time-series, fig.cap = "There are strong difference in population changes across different counties", output = T}
-top_counties <- tk_fb_data_admin |>
-  group_by(county_geoid, county_name) |>
-  summarise(
-    max_abs_change = max(abs(percent_change), na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  slice_max(max_abs_change, n = 20) |>
-  pull(county_geoid)
-
-fb_time <- tk_fb_data_admin |>
-  filter(county_geoid %in% top_counties) |>
-  mutate(ds = as.Date(ds)) |>
-  group_by(ds, county_geoid, county_name) |>
-  summarise(
-    mean_percent_change = mean(percent_change, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-ggplot(fb_time, aes(x = ds, y = mean_percent_change)) +
-  geom_hline(yintercept = 0, linewidth = 0.3) +
-  geom_line(linewidth = 0.6) +
-  geom_point(size = 1) +
-  facet_wrap(~ county_name, scales = "free_y") +
-  scale_y_continuous() +
-  labs(
-    title = "% Population Density Change Over Time",
-    x = NULL,
-    y = "% Change vs Baseline"
-  ) +
-  theme_minimal()
-```
-
-# Vulnerability
-
-## Power Outages
-
-As shown in @fig-network-coverage, ...
-
-```{r fig-network-coverage, fig.cap = "Insert caption here.", output = T}
-network_time <- tk_nc_data_active |>
-  mutate(ds = as.Date(ds)) |>
-  group_by(ds, county_name) |>
-  summarise(
-    pct_coverage = mean(coverage, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-ggplot(network_time, aes(x = ds, y = pct_coverage)) +
-  geom_line(linewidth = 0.6) +
-  geom_point(size = 1) +
-  facet_wrap(~ county_name) +
-  scale_y_continuous() +
-  labs(
-    title = "Network Coverage Over Time",
-    x = NULL,
-    y = "Coverage"
-  ) +
-  theme_minimal()
-```
-
-## Places
-
-As shown by @tbl-summary-table, ...
-
-```{r tbl-summary-table, tbl.cap = "Bottom 20 county-to-county crisis movement flows", output = T}
-county_flows <- tk_mp_data_admin |>
-  group_by(start_county_name, end_county_name) |>
-  summarise(
-    total_crisis_movement = sum(n_crisis, na.rm = TRUE),
-    avg_z_score = mean(z_score, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  arrange(desc(total_crisis_movement))
-
-county_flows |>
-  slice_tail(n = 20) |>
-  gt()
-
-# Top 20 wasn't very interesting. Bottom 20 says something more informative 
-```
 
 
 
