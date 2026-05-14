@@ -707,6 +707,22 @@ make_demographics_table <- function(file_name,
 }
 ```
 
+Used sample measures that I thought said more than the normal ones. Easily changed in the function so if you see one that's cool lmk
+```{r}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  n_counties = 10
+)
+```
 
+Not finished but you get the gist. I also made it so i can pick which day the population density change is from (in progress)
+
+```{r, execute = False}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  map_date = "2026-02-01",
+  n_counties = 10
+)
+```
 
 
