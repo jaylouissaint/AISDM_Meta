@@ -157,8 +157,200 @@ counties_sf <- counties(cb = TRUE, year = 2023) |>
   )
 ```
 
+## WIP (Dont delete just hide)
+```{r}
+library(ggmap)
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(here)
+library(scales)
+library(tigris)
+library(sf)
 
-## % Population Density Change
+options(tigris_use_cache = TRUE)
+```
+
+```{r}
+# County boundaries
+counties_sf <- tigris::counties(cb = TRUE, year = 2023) |>
+  st_transform(4326) |>
+  select(
+    county_state = STATE_NAME,
+    county_name = NAME,
+    county_geoid = GEOID,
+    geometry
+  )
+
+# State boundaries
+states_sf <- tigris::states(cb = TRUE, year = 2023) |>
+  st_transform(4326) |>
+  select(
+    state_name = NAME,
+    geometry
+  )
+```
+
+
+```{r}
+sf_to_polygon_df <- function(sf_object, id_cols) {
+  coords <- st_coordinates(sf_object)
+  
+  sf_object |>
+    st_drop_geometry() |>
+    mutate(.row_id = row_number()) |>
+    right_join(
+      as.data.frame(coords) |>
+        mutate(.row_id = L1),
+      by = ".row_id"
+    ) |>
+    mutate(
+      group_id = interaction(.row_id, L1, L2, drop = TRUE)
+    )
+}
+```
+
+```{r}
+make_percent_change_map <- function(file_name,
+                                    map_date = NULL,
+                                    date_col = "ds",
+                                    value_col = "percent_change",
+                                    output_plot_name = NULL,
+                                    title_prefix = "Population Density Change on",
+                                    bbox_buffer = 0.25,
+                                    maptype = "stamen_toner_lite",
+                                    zoom = 7) {
+  
+  # Read file from root Outputs folder
+  df <- readr::read_csv(
+    here::here("Outputs", file_name),
+    show_col_types = FALSE
+  )
+  
+  # Make sure the date column is treated as a Date
+  df <- df |>
+    dplyr::mutate("{date_col}" := as.Date(.data[[date_col]]))
+  
+  # If no date is supplied, use the latest date by default
+  if (is.null(map_date)) {
+    map_date <- max(df[[date_col]], na.rm = TRUE)
+  } else {
+    map_date <- as.Date(map_date)
+  }
+  
+  # Summarize to county level for the selected date
+  selected_county <- df |>
+    dplyr::filter(.data[[date_col]] == map_date) |>
+    dplyr::group_by(county_geoid, county_name, county_state) |>
+    dplyr::summarise(
+      mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  if (nrow(selected_county) == 0) {
+    stop("No data found for selected date: ", map_date)
+  }
+  
+  # Join selected data to county boundaries
+  map_counties_sf <- counties_sf |>
+    dplyr::inner_join(selected_county, by = "county_geoid")
+  
+  # Keep only the state boundaries represented in the data
+  map_states_sf <- states_sf |>
+    dplyr::filter(state_name %in% unique(map_counties_sf$county_state))
+  
+  # Use state boundaries to set the full map extent
+  
+ bbox <- sf::st_bbox(map_states_sf)
+
+  bbox_map <- c(
+    left   = as.numeric(unname(bbox["xmin"])) - bbox_buffer,
+    bottom = as.numeric(unname(bbox["ymin"])) - bbox_buffer,
+    right  = as.numeric(unname(bbox["xmax"])) + bbox_buffer,
+    top    = as.numeric(unname(bbox["ymax"])) + bbox_buffer
+  )
+  
+  names(bbox_map) <- c("left", "bottom", "right", "top")
+  
+  base_map <- ggmap::get_stadiamap(
+    bbox = bbox_map,
+    zoom = zoom,
+    maptype = maptype
+  )
+  
+  # Download ggmap/Stadia basemap
+  base_map <- ggmap::get_stadiamap(
+    bbox = bbox_map,
+    zoom = zoom,
+    maptype = maptype
+  )
+  
+  # Convert county and state boundaries to regular data frames
+  county_poly <- sf_to_polygon_df(map_counties_sf, id_cols = "county_geoid")
+  
+  state_poly <- sf_to_polygon_df(map_states_sf, id_cols = "state_name")
+  
+  # Build map using ggmap + regular polygon layers
+  p <- ggmap::ggmap(base_map) +
+    ggplot2::geom_polygon(
+      data = county_poly,
+      aes(
+        x = X,
+        y = Y,
+        group = group_id,
+        fill = mean_percent_change
+      ),
+      color = "white",
+      linewidth = 0.25,
+      alpha = 0.75,
+      inherit.aes = FALSE
+    ) +
+    ggplot2::geom_path(
+      data = state_poly,
+      aes(
+        x = X,
+        y = Y,
+        group = group_id
+      ),
+      color = "black",
+      linewidth = 0.8,
+      inherit.aes = FALSE
+    ) +
+    ggplot2::scale_fill_gradient2(
+      labels = scales::label_number(suffix = "%", accuracy = 1)
+    ) +
+    ggplot2::labs(
+      title = paste(title_prefix, map_date),
+      fill = "% Change vs Baseline"
+    ) +
+    ggplot2::theme_minimal()
+  
+  # Save plot if requested
+  if (!is.null(output_plot_name)) {
+    ggplot2::ggsave(
+      filename = here::here("Outputs", output_plot_name),
+      plot = p,
+      width = 10,
+      height = 7
+    )
+  }
+  
+  return(p)
+}
+```
+
+
+```{r}
+make_percent_change_map(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  zoom = 7,
+  bbox_buffer = 0.5
+)
+```
+
+
+
+## % Population Density Change (Maps)
 
 Note the difference in @fig-pop-bing, which is based on Bing tiles, and @fig-pop-admin, which is based on administrative regions.
 
@@ -400,6 +592,9 @@ county_flows |>
 
 # Top 20 wasn't very interesting. Bottom 20 says something more informative 
 ```
+
+
+# Demographics
 
 
 

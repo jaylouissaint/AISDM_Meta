@@ -228,7 +228,7 @@ Request [API key here](https://api.census.gov/data/key_signup.html)
 library(tidycensus)
 
 # You only need to run this once if you have not already set a Census API key
-census_api_key("YOUR_CENSUS_API_KEY", install = TRUE, overwrite = TRUE)
+#census_api_key("insert_your_census_key", install = TRUE, overwrite = TRUE)
 
 # Pull county-level ACS demographics
 get_county_demographics <- function(year = 2022) {
@@ -266,13 +266,43 @@ get_county_demographics <- function(year = 2022) {
   return(demographics)
 }
 
-county_demographics <- get_county_demographics(year = 2022)
+# 2024 is latest that works
+county_demographics <- get_county_demographics(year = 2024)
 
 write_csv(
   county_demographics,
   here("Outputs", "county_demographics_acs.csv")
 )
 ```
+
+```{r}
+# Helper to join demographics
+
+add_demographics <- function(df,
+                             demographics = county_demographics,
+                             geoid_col = "county_geoid",
+                             prefix = "") {
+  
+  demographics_to_join <- demographics
+  
+  # If prefix is supplied, rename demographic columns before joining
+  # Example: start_total_population, end_median_income, etc.
+  if (prefix != "") {
+    demographics_to_join <- demographics_to_join |>
+      rename_with(
+        ~ paste0(prefix, .x),
+        .cols = -county_geoid
+      )
+  }
+  
+  df |>
+    left_join(
+      demographics_to_join,
+      by = setNames("county_geoid", geoid_col)
+    )
+}
+```
+
 
 # DATA AGGREGATION
 
@@ -286,6 +316,16 @@ ba_data <- aggregate_csvs(
   lat_col = "latitude",
   lon_col = "longitude",
   prefix = "")
+
+ba_data <- add_demographics(
+  df = ba_data,
+  geoid_col = "county_geoid"
+)
+
+write_csv(
+  ba_data,
+  here("Outputs", "business_activity_aggregated.csv")
+)
 ```
 
 ```{r, execute=FALSE}
@@ -321,10 +361,21 @@ tk_mp_data_admin <- aggregate_csvs(
 
 tk_mp_data_admin <- add_movement_counties_fast(tk_mp_data_admin)
 
+tk_mp_data_admin <- tk_mp_data_admin |>
+  add_demographics(
+    geoid_col = "start_county_geoid",
+    prefix = "start_"
+  ) |>
+  add_demographics(
+    geoid_col = "end_county_geoid",
+    prefix = "end_"
+  )
+
 write_csv(
   tk_mp_data_admin,
   here("Outputs", "tk_movement_between_places_aggregated_admin.csv")
 )
+
 
 ```
 
@@ -336,30 +387,61 @@ tk_mp_data_bing <- aggregate_csvs(
 
 tk_mp_data_bing <- add_movement_counties_fast(tk_mp_data_bing)
 
+tk_mp_data_bing <- tk_mp_data_bing |>
+  add_demographics(
+    geoid_col = "start_county_geoid",
+    prefix = "start_"
+  ) |>
+  add_demographics(
+    geoid_col = "end_county_geoid",
+    prefix = "end_"
+  )
+
 write_csv(
   tk_mp_data_bing,
   here("Outputs", "tk_movement_between_places_aggregated_bing.csv")
 )
+
 ```
 
 ```{r}
 ##### ------ Facebook Population during crisis ------ #####
 tk_fb_data_admin <- aggregate_csvs(
-  path_parts = c("Data","Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Administrative_Regions"),
+  path_parts = c("Data", "Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis", "Administrative_Regions"),
   output_name = "tk_facebook_pop_aggregated_admin.csv",
   lat_col = "latitude",
   lon_col = "longitude",
   prefix = ""
 )
+
+tk_fb_data_admin <- add_demographics(
+  df = tk_fb_data_admin,
+  geoid_col = "county_geoid"
+)
+
+write_csv(
+  tk_fb_data_admin,
+  here("Outputs", "tk_facebook_pop_aggregated_admin.csv")
+)
 ```
 
 ```{r}
 tk_fb_data_bing <- aggregate_csvs(
-  path_parts = c("Data","Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis","Bing_Tiles"),
+  path_parts = c("Data", "Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis", "Bing_Tiles"),
   output_name = "tk_facebook_pop_aggregated_bing.csv",
   lat_col = "latitude",
   lon_col = "longitude",
   prefix = ""
+)
+
+tk_fb_data_bing <- add_demographics(
+  df = tk_fb_data_bing,
+  geoid_col = "county_geoid"
+)
+
+write_csv(
+  tk_fb_data_bing,
+  here("Outputs", "tk_facebook_pop_aggregated_bing.csv")
 )
 ```
 
@@ -367,22 +449,41 @@ tk_fb_data_bing <- aggregate_csvs(
 
 ##### ------ Network Coverage ------ #####
 
-
 tk_nc_data_active <- aggregate_csvs(
-  path_parts = c("Data","Tennessee_Kentucky", "Fern_Network_Coverage","Active"),
+  path_parts = c("Data", "Tennessee_Kentucky", "Fern_Network_Coverage", "Active"),
   output_name = "tk_network_coverage_aggregated_active.csv",
   lat_col = "lat",
   lon_col = "lon",
   prefix = ""
 )
+
+tk_nc_data_active <- add_demographics(
+  df = tk_nc_data_active,
+  geoid_col = "county_geoid"
+)
+
+write_csv(
+  tk_nc_data_active,
+  here("Outputs", "tk_network_coverage_aggregated_active.csv")
+)
 ```
 
 ```{r}
 tk_nc_data_undetected <- aggregate_csvs(
-  path_parts = c("Data","Tennessee_Kentucky", "Fern_Network_Coverage","Undetected"),
+  path_parts = c("Data", "Tennessee_Kentucky", "Fern_Network_Coverage", "Undetected"),
   output_name = "tk_network_coverage_aggregated_undetected.csv",
   lat_col = "lat",
   lon_col = "lon",
   prefix = ""
+)
+
+tk_nc_data_undetected <- add_demographics(
+  df = tk_nc_data_undetected,
+  geoid_col = "county_geoid"
+)
+
+write_csv(
+  tk_nc_data_undetected,
+  here("Outputs", "tk_network_coverage_aggregated_undetected.csv")
 )
 ```
