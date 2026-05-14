@@ -11,8 +11,10 @@ format:
     colorlinks: true
     pdf-engine: xelatex
 ---
+
 # FUNCTIONS
-## Latitude and Longitude 
+
+## Latitude and Longitude
 
 ```{r}
 
@@ -60,8 +62,8 @@ add_county_from_coords <- function(df, lat_col, lon_col, prefix = "") {
 }
 ```
 
-
 ## Aggregate CSVs
+
 ```{r}
 aggregate_csvs <- function(path_parts,
                            output_name = "aggregated.csv",
@@ -149,6 +151,7 @@ aggregate_csvs <- function(path_parts,
 ```
 
 ## Fast Aggregate Counties
+
 ```{r}
 add_movement_counties_fast <- function(df,
                                        start_lat = "start_latitude",
@@ -198,8 +201,8 @@ add_movement_counties_fast <- function(df,
 }
 ```
 
-
 ## Summary Statistics
+
 ```{r}
 analyze_dataset <- function(df) {
   list(
@@ -217,7 +220,62 @@ analyze_dataset <- function(df) {
 }
 ```
 
+## Demographics
+
+Request [API key here](https://api.census.gov/data/key_signup.html)
+
+```{r}
+library(tidycensus)
+
+# You only need to run this once if you have not already set a Census API key
+census_api_key("YOUR_CENSUS_API_KEY", install = TRUE, overwrite = TRUE)
+
+# Pull county-level ACS demographics
+get_county_demographics <- function(year = 2022) {
+  
+  demo_vars <- c(
+    total_population = "B01003_001",
+    median_income = "B19013_001",
+    poverty_count = "B17001_002",
+    total_poverty_universe = "B17001_001",
+    age_65_plus = "B01001_020",
+    age_65_plus_female = "B01001_044",
+    total_age = "B01001_001",
+    no_vehicle_households = "B08201_002",
+    total_households_vehicle = "B08201_001"
+  )
+  
+  demographics <- get_acs(
+    geography = "county",
+    variables = demo_vars,
+    year = year,
+    survey = "acs5",
+    output = "wide",
+    geometry = FALSE
+  ) |>
+    transmute(
+      county_geoid = GEOID,
+      county_name_acs = NAME,
+      total_population = total_populationE,
+      median_income = median_incomeE,
+      poverty_rate = poverty_countE / total_poverty_universeE,
+      pct_age_65_plus = (age_65_plusE + age_65_plus_femaleE) / total_ageE,
+      pct_no_vehicle = no_vehicle_householdsE / total_households_vehicleE
+    )
+  
+  return(demographics)
+}
+
+county_demographics <- get_county_demographics(year = 2022)
+
+write_csv(
+  county_demographics,
+  here("Outputs", "county_demographics_acs.csv")
+)
+```
+
 # DATA AGGREGATION
+
 ## General
 
 ```{r}
@@ -229,7 +287,6 @@ ba_data <- aggregate_csvs(
   lon_col = "longitude",
   prefix = "")
 ```
-
 
 ```{r, execute=FALSE}
 mp_data <- aggregate_csvs(
@@ -246,14 +303,11 @@ write_csv(
 
 ```
 
-
-
 ```{r}
 ##### ------ Summary Statistics ------ #####
 analyze_dataset(ba_data)
 analyze_dataset(mp_data)
 ```
-
 
 ## Tennessee and Kentucky
 
@@ -332,8 +386,3 @@ tk_nc_data_undetected <- aggregate_csvs(
   prefix = ""
 )
 ```
-
-
-
-
-
