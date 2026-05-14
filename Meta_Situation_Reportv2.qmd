@@ -596,6 +596,117 @@ county_flows |>
 
 # Demographics
 
+```{r}
+
+make_demographics_table <- function(file_name,
+                                    map_date = NULL,
+                                    date_col = "ds",
+                                    value_col = "percent_change",
+                                    n_counties = 10,
+                                    output_table_name = NULL,
+                                    table_title = "Demographic Profile of Most Impacted Counties") {
+  
+  # Read file from Outputs folder
+  df <- read_csv(
+    here("Outputs", file_name),
+    show_col_types = FALSE
+  )
+  
+  # Convert date column
+  df <- df |>
+    mutate("{date_col}" := as.Date(.data[[date_col]]))
+  
+  # Use latest date by default
+  if (is.null(map_date)) {
+    map_date <- max(df[[date_col]], na.rm = TRUE)
+  } else {
+    map_date <- as.Date(map_date)
+  }
+  
+  # Summarize to county level
+  county_demo <- df |>
+    filter(.data[[date_col]] == map_date) |>
+    group_by(
+      county_geoid,
+      county_name,
+      county_state
+    ) |>
+    summarise(
+      mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
+      total_population = first(na.omit(total_population)),
+      median_income = first(na.omit(median_income)),
+      poverty_rate = first(na.omit(poverty_rate)),
+      pct_age_65_plus = first(na.omit(pct_age_65_plus)),
+      pct_no_vehicle = first(na.omit(pct_no_vehicle)),
+      .groups = "drop"
+    ) |>
+    mutate(
+      abs_change = abs(mean_percent_change)
+    ) |>
+    arrange(desc(abs_change)) |>
+    slice_head(n = n_counties)
+  
+  # Create gt table
+  demo_table <- county_demo |>
+    select(
+      County = county_name,
+      State = county_state,
+      `Population Density Change` = mean_percent_change,
+      `Total Population` = total_population,
+      `Median Household Income` = median_income,
+      `Poverty Rate` = poverty_rate,
+      `% Age 65+` = pct_age_65_plus,
+      `% No Vehicle Access` = pct_no_vehicle
+    ) |>
+    gt() |>
+    tab_header(
+      title = table_title,
+      subtitle = paste("Selected counties on", map_date)
+    ) |>
+    fmt_number(
+      columns = `Population Density Change`,
+      decimals = 1,
+      suffixing = FALSE
+    ) |>
+    text_transform(
+      locations = cells_body(columns = `Population Density Change`),
+      fn = function(x) paste0(x, "%")
+    ) |>
+    fmt_number(
+      columns = `Total Population`,
+      decimals = 0,
+      use_seps = TRUE
+    ) |>
+    fmt_currency(
+      columns = `Median Household Income`,
+      currency = "USD",
+      decimals = 0
+    ) |>
+    fmt_percent(
+      columns = c(`Poverty Rate`, `% Age 65+`, `% No Vehicle Access`),
+      decimals = 1
+    ) |>
+    cols_align(
+      align = "center",
+      columns = everything()
+    ) |>
+    tab_options(
+      table.font.size = px(12),
+      data_row.padding = px(4)
+    )
+  
+  # Save table as image/html if requested
+  if (!is.null(output_table_name)) {
+    gtsave(
+      demo_table,
+      here("Outputs", output_table_name)
+    )
+  }
+  
+  return(demo_table)
+}
+```
+
 
 
 
