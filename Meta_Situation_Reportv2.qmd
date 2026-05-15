@@ -18,9 +18,7 @@ Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-cont
 
 # Summary
 
-A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23 and continued through January 26th. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Several states experienced network outages and extremely cold temperatures.
-
-The following visualizations are developed based on Meta AI for Good's data through Facebook. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
+A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23 and continued through January 26th. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Several states experienced network outages and extremely cold temperatures. The following visualizations are developed based on Meta AI for Good's data through Facebook. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
 
 ## Definitions
 
@@ -30,15 +28,15 @@ The following visualizations are developed based on Meta AI for Good's data thro
 
 - **Population Change Density (%)**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)
 
-- **Bing Tiles**: equivalent to roughly 2.4 kilometers on a side near the equator or the size of 6 x 6 city blocks
-
-- **Administrative Regions**: the polygon boundaries for administrative regions derived from the Database of Global Administrative Areas, also known as GADM﻿.
-
 - **Time Windows**: aggregated over 3 fixed 8-hour time windows, beginning at 00:00, 08:00 and 16:00, that represent changes in population density
 
 ## Bing Tiles vs. Administrative Regions
 
 The Facebook Population During Crisis (Administrative Regions) dataset is equivalent to the Facebook Population During Crisis (Tile Level) dataset except instead of aggregating user counts over grid tiles, it aggregates user counts within administrative boundaries such as states, provinces and counties.
+
+- **Bing Tiles**: equivalent to roughly 2.4 kilometers on a side near the equator or the size of 6 x 6 city blocks
+
+- **Administrative Regions**: the polygon boundaries for administrative regions derived from the Database of Global Administrative Areas, also known as GADM.
 
 {{<pagebreak>}}
 
