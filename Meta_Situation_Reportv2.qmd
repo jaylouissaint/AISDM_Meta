@@ -168,7 +168,6 @@ make_percent_change_map <- function(file_name,
 
 ## % Population Density Change
 
-Note the difference in @fig-pop-bing, which is based on Bing tiles, and @fig-pop-admin, which is based on administrative regions.
 
 ```{r fig-pop-bing, fig.cap = "Based on the Bing tiles, there are only a few counties with strong population density changes.", output = T}
 make_percent_change_map(
@@ -302,7 +301,8 @@ plot_county_time_series(
 )
 
 ```
-Check why lowest tracks so closely on Feb 9th and investigate whether outliers are skewing mean
+
+
 ```{r fig-time-series, fig.cap = "There are strong difference in population changes across different counties", output = T}
 high_time <- make_county_time_data(high_counties)
 
