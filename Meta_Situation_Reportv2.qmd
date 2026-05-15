@@ -396,6 +396,8 @@ county_flows |>
 
 ```
 
+{{< pagebreak >}}
+
 # Demographic Profile
 
 ```{r}
@@ -404,7 +406,7 @@ make_demographics_table <- function(file_name,
                                     map_date = NULL,
                                     date_col = "ds",
                                     value_col = "percent_change",
-                                    n_counties = 10,
+                                    n_counties = 15,
                                     output_table_name = NULL,
                                     table_title = "Demographic Profile of Most Impacted Counties", desc = T,
                                     source) {
@@ -519,6 +521,7 @@ make_demographics_table <- function(file_name,
 }
 ```
 
+
 ```{r, output = T}
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
@@ -536,7 +539,7 @@ make_demographics_table(
   map_date = "2026-02-02",
   desc = F,
   source = "Bing Tiles",
-  table_title = "=Counties with Most Decreased Population Density on 2026-02-02"
+  table_title = "Counties with Most Decreased Population Density on 2026-02-02"
 ) 
 ```
 
@@ -557,6 +560,49 @@ make_demographics_table(
   map_date = "2026-02-12",
   desc = F,
   source = "Bing Tiles",
+  table_title = "Counties with Most Decreased Population Density on 2026-02-12"
+) 
+```
+
+
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  map_date = "2026-01-30",
+  n_counties = 15,
+  source = "Administrative Regions",
+  table_title = "Counties with Most Increased Population Density on 2026-01-30"
+) 
+```
+
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  n_counties = 15,
+  map_date = "2026-01-30",
+  desc = F,
+  source = "Administrative Regions",
+  table_title = "Counties with Most Decreased Population Density on 2026-01-30"
+) 
+```
+
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  map_date = "2026-02-12",
+  n_counties = 15,
+  source = "Administrative Regions",
+  table_title = "Counties with Most Increased Population Density on 2026-02-12"
+) 
+```
+
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  n_counties = 15,
+  map_date = "2026-02-12",
+  desc = F,
+  source = "Administrative Regions",
   table_title = "Counties with Most Decreased Population Density on 2026-02-12"
 ) 
 ```
