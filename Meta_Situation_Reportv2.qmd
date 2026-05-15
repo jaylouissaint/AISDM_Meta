@@ -63,6 +63,13 @@ make_percent_change_map <- function(file_name,
                                     output_plot_name = NULL,
                                     title_prefix = "Population Density Change on") {
   
+  library(dplyr)
+  library(sf)
+  library(ggplot2)
+  library(readr)
+  library(here)
+  library(scales)
+  
   # Read file from root outputs folder
   df <- read_csv(
     here("outputs", file_name),
@@ -85,11 +92,17 @@ make_percent_change_map <- function(file_name,
   map_data <- counties_sf |>
     inner_join(latest_county, by = "county_geoid")
   
-  # Build map
-  p <- ggplot(map_data) +
-    geom_sf(aes(fill = mean_percent_change), linewidth = 0.2) +
+  # Filter and clip states to counties
+  relevant_states <- states_sf |>
+    st_filter(map_data, .predicate = st_intersects) |>
+    st_intersection(st_union(map_data))  # clip states to county boundaries
+  
+  # Build map with clipped state boundaries
+  p <- ggplot() +
+    geom_sf(data = map_data, aes(fill = mean_percent_change), linewidth = 0.2) +
+    geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +  # clipped state lines
     scale_fill_gradient2(
-      labels = label_number(suffix = "%", accuracy = 1)
+      labels = scales::label_number(suffix = "%", accuracy = 1)
     ) +
     labs(
       title = paste(title_prefix, latest_date),
