@@ -298,7 +298,7 @@ high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series(
   high_time,
-  "% Population Density Change Over Time: Highest-Change Counties"
+  "% Population Density Change Over Time:\nHighest-Change Counties"
 )
 
 
@@ -306,7 +306,7 @@ average_time <- make_county_time_data(average_counties)
 
 plot_county_time_series(
   average_time,
-  "% Population Density Change Over Time: Average-Change Counties"
+  "% Population Density Change Over Time:\nAverage-Change Counties"
 )
 
 
@@ -314,7 +314,7 @@ low_time <- make_county_time_data(low_counties)
 
 plot_county_time_series(
   low_time,
-  "% Population Density Change Over Time: Lowest-Change Counties"
+  "% Population Density Change Over Time:\nLowest-Change Counties"
 )
 ```
 
@@ -324,7 +324,7 @@ high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series_faceted(
   high_time,
-  "% Population Density Change Over Time: Highest-Change Counties"
+  "% Population Density Change Over Time:\nHighest-Change Counties"
 )
 
 
@@ -332,7 +332,7 @@ average_time <- make_county_time_data(average_counties)
 
 plot_county_time_series_faceted(
   average_time,
-  "% Population Density Change Over Time: Average-Change Counties"
+  "% Population Density Change Over Time:\nAverage-Change Counties"
 )
 
 
@@ -340,7 +340,7 @@ low_time <- make_county_time_data(low_counties)
 
 plot_county_time_series_faceted(
   low_time,
-  "% Population Density Change Over Time: Lowest-Change Counties"
+  "% Population Density Change Over Time:\nLowest-Change Counties"
 )
 
 ```
@@ -371,7 +371,7 @@ high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series_faceted_median(
   high_time,
-  "% Population Density Change Over Time: Highest-Change Counties"
+  "% Population Density Change Over Time:\nHighest-Change Counties"
 )
 
 
@@ -379,7 +379,7 @@ average_time <- make_county_time_data(average_counties)
 
 plot_county_time_series_faceted_median(
   average_time,
-  "% Population Density Change Over Time: Average-Change Counties"
+  "% Population Density Change Over Time:\nAverage-Change Counties"
 )
 
 
@@ -387,7 +387,7 @@ low_time <- make_county_time_data(low_counties)
 
 plot_county_time_series_faceted_median(
   low_time,
-  "% Population Density Change Over Time: Lowest-Change Counties"
+  "% Population Density Change Over Time:\nLowest-Change Counties"
 )
 ```
 
