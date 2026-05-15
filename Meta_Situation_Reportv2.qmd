@@ -63,20 +63,13 @@ make_percent_change_map <- function(file_name,
                                     output_plot_name = NULL,
                                     title_prefix = "Population Density Change on") {
   
-  library(dplyr)
-  library(sf)
-  library(ggplot2)
-  library(readr)
-  library(here)
-  library(scales)
-  
-  # Read file from root outputs folder
+  # Read file
   df <- read_csv(
     here("outputs", file_name),
     show_col_types = FALSE
   )
   
-  # Find latest date
+  # Latest date
   latest_date <- max(df[[date_col]], na.rm = TRUE)
   
   # Summarize to county level
@@ -88,19 +81,21 @@ make_percent_change_map <- function(file_name,
       .groups = "drop"
     )
   
-  # Join to county geometries
+  # Join county geometries
   map_data <- counties_sf |>
     inner_join(latest_county, by = "county_geoid")
   
-  # Filter and clip states to counties
-  relevant_states <- states_sf |>
-    st_filter(map_data, .predicate = st_intersects) |>
-    st_intersection(st_union(map_data))  # clip states to county boundaries
+  # Compute bounding box of counties (for plotting limits)
+  county_bbox <- st_bbox(map_data)
   
-  # Build map with clipped state boundaries
+  # Only keep states that intersect these counties
+  relevant_states <- states_sf |>
+    st_filter(map_data, .predicate = st_intersects)
+  
+  # Build map
   p <- ggplot() +
     geom_sf(data = map_data, aes(fill = mean_percent_change), linewidth = 0.2) +
-    geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +  # clipped state lines
+    geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +
     scale_fill_gradient2(
       labels = scales::label_number(suffix = "%", accuracy = 1)
     ) +
@@ -108,9 +103,13 @@ make_percent_change_map <- function(file_name,
       title = paste(title_prefix, latest_date),
       fill = "% Change vs Baseline"
     ) +
+    coord_sf(
+      xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
+      ylim = c(county_bbox["ymin"], county_bbox["ymax"])
+    ) +
     theme_minimal()
   
-  # Save plot if requested
+  # Save if requested
   if (!is.null(output_plot_name)) {
     ggsave(
       filename = here("outputs", output_plot_name),
