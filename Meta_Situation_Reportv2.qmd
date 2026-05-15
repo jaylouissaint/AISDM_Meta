@@ -60,6 +60,7 @@ states_sf <- tigris::states(cb = TRUE, year = 2023) |>
 make_percent_change_map <- function(file_name,
                                     date_col = "ds",
                                     value_col = "percent_change",
+                                    selected_date = NULL,   # New argument
                                     output_plot_name = NULL,
                                     title_prefix = "Population Density Change on") {
   
@@ -69,12 +70,20 @@ make_percent_change_map <- function(file_name,
     show_col_types = FALSE
   )
   
-  # Latest date
-  latest_date <- max(df[[date_col]], na.rm = TRUE)
+  # Determine which date to use
+  if (is.null(selected_date)) {
+    plot_date <- max(df[[date_col]], na.rm = TRUE)
+  } else {
+    # Ensure the selected date exists in the data
+    if (!(selected_date %in% df[[date_col]])) {
+      stop("The selected_date is not available in the data.")
+    }
+    plot_date <- selected_date
+  }
   
   # Summarize to county level
   latest_county <- df |>
-    filter(.data[[date_col]] == latest_date) |>
+    filter(.data[[date_col]] == plot_date) |>
     group_by(county_geoid, county_name, county_state) |>
     summarise(
       mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
@@ -100,7 +109,7 @@ make_percent_change_map <- function(file_name,
       labels = scales::label_number(suffix = "%", accuracy = 1)
     ) +
     labs(
-      title = paste(title_prefix, latest_date),
+      title = paste(title_prefix, plot_date),
       fill = "% Change vs Baseline"
     ) +
     coord_sf(
@@ -132,6 +141,14 @@ make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv"
 )
 ```
+
+```{r, output = T}
+make_percent_change_map(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  selected_date = "2026-02-02"
+)
+```
+
 
 ```{r fig-pop-admin, fig.cap = "Based on the administrative regions, there are two counties with strong population density changes, one positively and one negatively.", output = T}
 make_percent_change_map(
