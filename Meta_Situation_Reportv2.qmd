@@ -268,7 +268,9 @@ plot_county_time_series_faceted <- function(time_data, plot_title) {
       x = NULL,
       y = "% Change vs Baseline"
     ) +
-    theme_minimal()
+    theme_minimal() + 
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
 }
 
 ```
@@ -372,10 +374,9 @@ plot_county_time_series_faceted_median(
 )
 ```
 
-
 ## Places
 
-As shown by @tbl-summary-table, ...
+
 
 ```{r tbl-summary-table, tbl.cap = "Bottom 20 county-to-county crisis movement flows", output = T}
 tk_mp_data_admin <- read_csv(here("Outputs", "tk_movement_between_places_aggregated_admin.csv"),
@@ -390,14 +391,12 @@ county_flows <- tk_mp_data_admin |>
   arrange(desc(total_crisis_movement))
 
 county_flows |>
-  slice_tail(n = 20) |>
+  slice_head(n = 20) |>
   gt()
 
-# Top 20 wasn't very interesting. Bottom 20 says something more informative 
 ```
 
-
-# Demographics
+# Demographic Profile
 
 ```{r}
 
@@ -407,7 +406,8 @@ make_demographics_table <- function(file_name,
                                     value_col = "percent_change",
                                     n_counties = 10,
                                     output_table_name = NULL,
-                                    table_title = "Demographic Profile of Most Impacted Counties") {
+                                    table_title = "Demographic Profile of Most Impacted Counties", desc = T,
+                                    source) {
   
   # Read file from Outputs folder
   df <- read_csv(
@@ -445,9 +445,7 @@ make_demographics_table <- function(file_name,
     ) |>
     mutate(
       abs_change = abs(mean_percent_change)
-    ) |>
-    arrange(desc(abs_change)) |>
-    slice_head(n = n_counties)
+    )
   
   # Create gt table
   demo_table <- county_demo |>
@@ -461,68 +459,105 @@ make_demographics_table <- function(file_name,
       `% Age 65+` = pct_age_65_plus,
       `% No Vehicle Access` = pct_no_vehicle
     )
-  return(demo_table)
-}
-```
-
-Used sample measures that I thought said more than the normal ones. Easily changed in the function so if you see one that's cool lmk
-```{r, output = T}
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_bing.csv",
-  n_counties = 10
-) |>
+  demo_table <- arrange(demo_table, `Population Density Change`)
+  if (desc){
+    demo_table <- arrange(demo_table, desc(`Population Density Change`))
+  }
+  demo_table |>
+  head(n_counties) |>
   gt() |>
+  tab_header(
+    title = table_title,
+    subtitle = paste0("Source: ", source)
+  ) |>
   # Wrap columns
   cols_width(
     County ~ px(120),
-    State ~ px(70),
+    State ~ px(120),
+    `Population Density Change` ~ px(70),
+    `Total Population` ~ px(70),
+    `Median Household Income` ~ px(70),
     everything() ~ px(50)
   ) |>
-    # Reduce padding everywhere
   tab_options(
     table.font.size = px(9),
-    heading.title.font.size = px(11),
+    heading.title.font.size = px(16),
     heading.subtitle.font.size = px(9),
-
-    data_row.padding = px(0),
+    data_row.padding = px(25),
     column_labels.padding = px(0),
-
     table.width = pct(100)
   ) |>
-
   fmt_number(
-      columns = `Population Density Change`,
-      decimals = 1,
-      suffixing = FALSE) |>
-    fmt_number(
-      columns = `Total Population`,
-      decimals = 0,
-      use_seps = TRUE
-    ) |>
-    fmt_currency(
-      columns = `Median Household Income`,
-      currency = "USD",
-      decimals = 0
-    ) |>
-    fmt_percent(
-      columns = c(`Poverty Rate`, `% Age 65+`, `% No Vehicle Access`),
-      decimals = 1
-    ) |>
-  # Allow text wrapping
+    columns = `Population Density Change`,
+    decimals = 1,
+    suffixing = FALSE
+  ) |>
+  fmt_number(
+    columns = `Total Population`,
+    decimals = 0,
+    use_seps = TRUE
+  ) |>
+  fmt_currency(
+    columns = `Median Household Income`,
+    currency = "USD",
+    decimals = 0
+  ) |>
+  fmt_percent(
+    columns = c(`Poverty Rate`, `% Age 65+`, `% No Vehicle Access`),
+    decimals = 1
+  ) |>
   cols_align(
     align = "center",
     columns = everything()
   ) |>
-  
   opt_table_font(
     font = list(
       google_font("Roboto Condensed"),
       default_fonts()
     )
   )
+}
 ```
 
-Not finished but you get the gist. I also made it so i can pick which day the population density change is from (in progress)
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  map_date = "2026-02-02",
+  n_counties = 15,
+  source = "Bing Tiles",
+  table_title = "Counties with Most Increased Population Density on 2026-02-02"
+) 
+```
 
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  n_counties = 15,
+  map_date = "2026-02-02",
+  desc = F,
+  source = "Bing Tiles",
+  table_title = "=Counties with Most Decreased Population Density on 2026-02-02"
+) 
+```
 
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  map_date = "2026-02-12",
+  n_counties = 15,
+  source = "Bing Tiles",
+  table_title = "Counties with Most Increased Population Density on 2026-02-12"
+) 
+```
+
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  n_counties = 15,
+  map_date = "2026-02-12",
+  desc = F,
+  source = "Bing Tiles",
+  table_title = "Counties with Most Decreased Population Density on 2026-02-12"
+) 
+```
 
