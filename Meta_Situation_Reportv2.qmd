@@ -157,8 +157,9 @@ counties_sf <- counties(cb = TRUE, year = 2023) |>
   )
 ```
 
-## WIP (Dont delete just hide)
+
 ```{r}
+##### ------- WIP (Dont delete just hide)
 library(ggmap)
 library(ggplot2)
 library(readr)
@@ -340,7 +341,7 @@ make_percent_change_map <- function(file_name,
 ```
 
 
-```{r}
+```{r, eval = F}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   zoom = 7,
@@ -350,18 +351,17 @@ make_percent_change_map(
 
 
 
-## % Population Density Change (Maps)
 
-Note the difference in @fig-pop-bing, which is based on Bing tiles, and @fig-pop-admin, which is based on administrative regions.
 
-```{r}
+```{r, eval = F}
+#####  ------ % Population Density Change (Maps)
 # Not working because of earlier runtime error do not delete
 make_percent_change_map(
   file_name = "movement_between_places_aggregated.csv"
 )
 ```
 
-```{r fig-pop-bing, fig.cap = "Based on the Bing tiles, there are only a few counties with strong population density changes.", output = T}
+```{r fig-pop-bing, fig.cap = "Based on the Bing tiles, there are only a few counties with strong population density changes.", eval = F}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
    bbox_buffer = 1
@@ -389,6 +389,7 @@ make_percent_change_map(
 
 
 ```{r}
+tk_fb_data_admin <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F)
 # Summarize county-level movement/change intensity 
 # Have to decide between median and mean
 county_change_summary <- tk_fb_data_admin |>
@@ -473,7 +474,7 @@ plot_county_time_series_faceted <- function(time_data, plot_title) {
 ```
 
 
-```{r fig-time-series, fig.cap = "There are strong difference in population changes across different counties", output = T}
+```{r fig-time-series1, fig.cap = "There are strong difference in population changes across different counties", output = T}
 high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series(
@@ -577,6 +578,8 @@ plot_county_time_series_faceted_median(
 As shown by @tbl-summary-table, ...
 
 ```{r tbl-summary-table, tbl.cap = "Bottom 20 county-to-county crisis movement flows", output = T}
+tk_mp_data_admin <- read_csv(here("Outputs", "tk_movement_between_places_aggregated_admin.csv"),
+                             show_col_types = F)
 county_flows <- tk_mp_data_admin |>
   group_by(start_county_name, end_county_name) |>
   summarise(
@@ -657,21 +660,86 @@ make_demographics_table <- function(file_name,
       `Poverty Rate` = poverty_rate,
       `% Age 65+` = pct_age_65_plus,
       `% No Vehicle Access` = pct_no_vehicle
-    ) |>
-    gt() |>
-    tab_header(
-      title = table_title,
-      subtitle = paste("Selected counties on", map_date)
-    ) |>
-    fmt_number(
+    )
+  # |>
+  #   gt() |>
+  #   tab_header(
+  #     title = table_title,
+  #     subtitle = paste("Selected counties on", map_date)
+  #   ) |>
+  #   fmt_number(
+  #     columns = `Population Density Change`,
+  #     decimals = 1,
+  #     suffixing = FALSE
+  #   ) |>
+  #   text_transform(
+  #     locations = cells_body(columns = `Population Density Change`),
+  #     fn = function(x) paste0(x, "%")
+  #   ) |>
+  #   fmt_number(
+  #     columns = `Total Population`,
+  #     decimals = 0,
+  #     use_seps = TRUE
+  #   ) |>
+  #   fmt_currency(
+  #     columns = `Median Household Income`,
+  #     currency = "USD",
+  #     decimals = 0
+  #   ) |>
+  #   fmt_percent(
+  #     columns = c(`Poverty Rate`, `% Age 65+`, `% No Vehicle Access`),
+  #     decimals = 1
+  #   ) |>
+  #   cols_align(
+  #     align = "center",
+  #     columns = everything()
+  #   ) |>
+  #   tab_options(
+  #     table.font.size = px(12),
+  #     data_row.padding = px(4)
+  #   )
+  # 
+  # # Save table as image/html if requested
+  # if (!is.null(output_table_name)) {
+  #   gtsave(
+  #     demo_table,
+  #     here("Outputs", output_table_name)
+  #   )
+  # }
+  
+  return(demo_table)
+}
+```
+
+Used sample measures that I thought said more than the normal ones. Easily changed in the function so if you see one that's cool lmk
+```{r, output = T}
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  n_counties = 10
+) |>
+  gt() |>
+  # Wrap columns
+  cols_width(
+    County ~ px(120),
+    State ~ px(70),
+    everything() ~ px(50)
+  ) |>
+    # Reduce padding everywhere
+  tab_options(
+    table.font.size = px(9),
+    heading.title.font.size = px(11),
+    heading.subtitle.font.size = px(9),
+
+    data_row.padding = px(0),
+    column_labels.padding = px(0),
+
+    table.width = pct(100)
+  ) |>
+
+  fmt_number(
       columns = `Population Density Change`,
       decimals = 1,
-      suffixing = FALSE
-    ) |>
-    text_transform(
-      locations = cells_body(columns = `Population Density Change`),
-      fn = function(x) paste0(x, "%")
-    ) |>
+      suffixing = FALSE) |>
     fmt_number(
       columns = `Total Population`,
       decimals = 0,
@@ -686,38 +754,23 @@ make_demographics_table <- function(file_name,
       columns = c(`Poverty Rate`, `% Age 65+`, `% No Vehicle Access`),
       decimals = 1
     ) |>
-    cols_align(
-      align = "center",
-      columns = everything()
-    ) |>
-    tab_options(
-      table.font.size = px(12),
-      data_row.padding = px(4)
-    )
+  # Allow text wrapping
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) |>
   
-  # Save table as image/html if requested
-  if (!is.null(output_table_name)) {
-    gtsave(
-      demo_table,
-      here("Outputs", output_table_name)
+  opt_table_font(
+    font = list(
+      google_font("Roboto Condensed"),
+      default_fonts()
     )
-  }
-  
-  return(demo_table)
-}
-```
-
-Used sample measures that I thought said more than the normal ones. Easily changed in the function so if you see one that's cool lmk
-```{r}
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_bing.csv",
-  n_counties = 10
-)
+  )
 ```
 
 Not finished but you get the gist. I also made it so i can pick which day the population density change is from (in progress)
 
-```{r, execute = False}
+```{r, execute = F}
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   map_date = "2026-02-01",
