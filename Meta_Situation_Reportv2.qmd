@@ -1,5 +1,6 @@
 ---
-title: "Winter Storm Fern Situation Report - January 2026"
+title: "Winter Storm Fern Situation Report"
+subtitle: "January 2026"
 execute: 
   warning: false
   message: false
