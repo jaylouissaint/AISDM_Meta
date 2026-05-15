@@ -40,6 +40,8 @@ The following visualizations are developed based on Meta AI for Good's data thro
 
 The Facebook Population During Crisis (Administrative Regions) dataset is equivalent to the Facebook Population During Crisis (Tile Level) dataset except instead of aggregating user counts over grid tiles, it aggregates user counts within administrative boundaries such as states, provinces and counties.
 
+{{<pagebreak>}}
+
 # Movement
 
 ```{r}
@@ -186,7 +188,7 @@ make_percent_change_map <- function(file_name,
 ## % Population Density Change
 
 
-```{r fig-pop-bing, fig.cap = "Based on the Bing tiles, there are only a few counties with strong population density changes.", output = T}
+```{r, output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12")
@@ -194,7 +196,7 @@ make_percent_change_map(
 ```
 
 
-```{r fig-pop-admin, fig.cap = "Based on the administrative regions, there are two counties with strong population density changes, one positively and one negatively.", output = T}
+```{r, output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_admin.csv",
   selected_date = c("2026-01-30", "2026-02-12")
@@ -293,10 +295,15 @@ plot_county_time_series_faceted <- function(time_data, plot_title) {
 ```
 
 
-```{r fig-time-series1, fig.cap = "There are strong difference in population changes across different counties", output = T}
+```{r, output = T}
 high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series(
+  high_time,
+  "% Population Density Change Over Time:\nHighest-Change Counties"
+)
+
+plot_county_time_series_faceted(
   high_time,
   "% Population Density Change Over Time:\nHighest-Change Counties"
 )
@@ -308,7 +315,10 @@ plot_county_time_series(
   average_time,
   "% Population Density Change Over Time:\nAverage-Change Counties"
 )
-
+plot_county_time_series_faceted(
+  average_time,
+  "% Population Density Change Over Time:\nAverage-Change Counties"
+)
 
 low_time <- make_county_time_data(low_counties)
 
@@ -316,27 +326,6 @@ plot_county_time_series(
   low_time,
   "% Population Density Change Over Time:\nLowest-Change Counties"
 )
-```
-
-
-```{r fig-time-series, fig.cap = "There are strong difference in population changes across different counties", output = T}
-high_time <- make_county_time_data(high_counties)
-
-plot_county_time_series_faceted(
-  high_time,
-  "% Population Density Change Over Time:\nHighest-Change Counties"
-)
-
-
-average_time <- make_county_time_data(average_counties)
-
-plot_county_time_series_faceted(
-  average_time,
-  "% Population Density Change Over Time:\nAverage-Change Counties"
-)
-
-
-low_time <- make_county_time_data(low_counties)
 
 plot_county_time_series_faceted(
   low_time,
