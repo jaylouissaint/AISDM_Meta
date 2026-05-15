@@ -31,6 +31,7 @@ library(scales)
 library(lubridate)
 library(ggmap)
 library(readr)
+library(patchwork)
 library (here)
 library(dplyr)
 library(sf)
@@ -56,13 +57,17 @@ states_sf <- tigris::states(cb = TRUE, year = 2023) |>
     state_name = NAME,
     geometry
   )
+library(tidyverse)
+library(sf)
+library(patchwork)  # For arranging plots
+library(scales)     # For squish
 
 make_percent_change_map <- function(file_name,
                                     date_col = "ds",
                                     value_col = "percent_change",
-                                    selected_date = NULL,   # New argument
+                                    selected_date = NULL,   # Can be length 1 or 2
                                     output_plot_name = NULL,
-                                    title_prefix = "Population Density Change on") {
+                                    title_prefix = "Population Density Change (%)") {
   
   # Read file
   df <- read_csv(
@@ -70,65 +75,93 @@ make_percent_change_map <- function(file_name,
     show_col_types = FALSE
   )
   
-  # Determine which date to use
+  # Determine which dates to use
   if (is.null(selected_date)) {
-    plot_date <- max(df[[date_col]], na.rm = TRUE)
+    plot_dates <- max(df[[date_col]], na.rm = TRUE)
   } else {
-    # Ensure the selected date exists in the data
-    if (!(selected_date %in% df[[date_col]])) {
-      stop("The selected_date is not available in the data.")
+    if (!all(selected_date %in% df[[date_col]])) {
+      stop("One or more selected_date values are not available in the data.")
     }
-    plot_date <- selected_date
+    plot_dates <- selected_date
   }
   
-  # Summarize to county level
-  latest_county <- df |>
-    filter(.data[[date_col]] == plot_date) |>
-    group_by(county_geoid, county_name, county_state) |>
-    summarise(
-      mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
-      .groups = "drop"
+ # Compute global fill range using the summarized county-level data
+  all_summarized <- df |>
+    filter(.data[[date_col]] %in% plot_dates) |>
+    group_by(county_geoid, county_name, county_state, !!sym(date_col)) |>
+    summarise(mean_percent_change = mean(.data[[value_col]], na.rm = TRUE), .groups = "drop")
+  
+  fill_range <- all_summarized |>
+    summarise(min_val = min(mean_percent_change, na.rm = TRUE),
+              max_val = max(mean_percent_change, na.rm = TRUE))
+  
+  # Function to create a single map
+  create_map <- function(plot_date) {
+    latest_county <- df |>
+      filter(.data[[date_col]] == plot_date) |>
+      group_by(county_geoid, county_name, county_state) |>
+      summarise(
+        mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
+        .groups = "drop"
+      )
+    
+    map_data <- counties_sf |>
+      inner_join(latest_county, by = "county_geoid")
+    
+    county_bbox <- st_bbox(map_data)
+    relevant_states <- states_sf |>
+      st_filter(map_data, .predicate = st_intersects)
+    
+    ggplot() +
+      geom_sf(data = map_data, aes(fill = mean_percent_change), linewidth = 0.2) +
+      geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +
+      scale_fill_gradient2(
+        limits = c(fill_range$min_val, fill_range$max_val),
+        oob = squish,   # ensure values outside the plot's range are included
+        labels = label_number(suffix = "%", accuracy = 1)
+      ) +
+      labs(
+        title = plot_date,
+        fill = "% Change vs Baseline"
+      ) +
+      coord_sf(
+        xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
+        ylim = c(county_bbox["ymin"], county_bbox["ymax"])
+      ) +
+      theme_minimal()
+  }
+  
+  # Create plots
+  plots <- lapply(plot_dates, create_map)
+  
+  # Combine plots side-by-side with shared legend
+  if (length(plots) == 1) {
+    combined_plot <- plots[[1]] +
+      ggtitle(paste(title_prefix, plots[[1]]$labels$title))
+  } else {
+    combined_plot <- wrap_plots(plots, ncol = length(plots), guides = "collect") &
+      theme(legend.position = "bottom")
+    
+    # Shared title
+    combined_plot <- combined_plot + plot_annotation(
+    title = title_prefix,
+    theme = theme(
+      plot.title = element_text(hjust = 0.5)  # centers the title
     )
-  
-  # Join county geometries
-  map_data <- counties_sf |>
-    inner_join(latest_county, by = "county_geoid")
-  
-  # Compute bounding box of counties (for plotting limits)
-  county_bbox <- st_bbox(map_data)
-  
-  # Only keep states that intersect these counties
-  relevant_states <- states_sf |>
-    st_filter(map_data, .predicate = st_intersects)
-  
-  # Build map
-  p <- ggplot() +
-    geom_sf(data = map_data, aes(fill = mean_percent_change), linewidth = 0.2) +
-    geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +
-    scale_fill_gradient2(
-      labels = scales::label_number(suffix = "%", accuracy = 1)
-    ) +
-    labs(
-      title = paste(title_prefix, plot_date),
-      fill = "% Change vs Baseline"
-    ) +
-    coord_sf(
-      xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
-      ylim = c(county_bbox["ymin"], county_bbox["ymax"])
-    ) +
-    theme_minimal()
+  )
+  }
   
   # Save if requested
   if (!is.null(output_plot_name)) {
     ggsave(
       filename = here("outputs", output_plot_name),
-      plot = p,
-      width = 10,
+      plot = combined_plot,
+      width = ifelse(length(plot_dates) == 2, 16, 10),
       height = 7
     )
   }
   
-  return(p)
+  return(combined_plot)
 }
 ```
 
@@ -138,21 +171,16 @@ Note the difference in @fig-pop-bing, which is based on Bing tiles, and @fig-pop
 
 ```{r fig-pop-bing, fig.cap = "Based on the Bing tiles, there are only a few counties with strong population density changes.", output = T}
 make_percent_change_map(
-  file_name = "tk_facebook_pop_aggregated_bing.csv"
-)
-```
-
-```{r, output = T}
-make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
-  selected_date = "2026-02-02"
+  selected_date = c("2026-02-02", "2026-02-12")
 )
 ```
 
 
 ```{r fig-pop-admin, fig.cap = "Based on the administrative regions, there are two counties with strong population density changes, one positively and one negatively.", output = T}
 make_percent_change_map(
-  file_name = "tk_facebook_pop_aggregated_admin.csv"
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  selected_date = c("2026-01-30", "2026-02-12")
 )
 ```
 
