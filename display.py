@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from matplotlib.colors import TwoSlopeNorm
 from pathlib import Path
+import seaborn as sns
 
 # =========================
 # Streamlit page settings
@@ -62,6 +63,9 @@ selected_aggregation = st.sidebar.selectbox(
 
 selected_file = aggregation_options[selected_aggregation]
 
+
+
+
 # =========================
 # Load data
 # =========================
@@ -109,6 +113,18 @@ if len(selected_dates) == 0:
     st.warning("Please select at least one date.")
     st.stop()
 
+
+# =========================
+# County selector
+# =========================
+available_counties = sorted(df["county_name"].dropna().unique())
+
+selected_counties = st.sidebar.multiselect(
+    "Select counties",
+    options=available_counties
+)
+
+
 # =========================
 # Compute global fill range
 # =========================
@@ -131,6 +147,28 @@ norm = TwoSlopeNorm(
     vcenter=0,
     vmax=fill_max
 )
+
+# =========================
+# County time series prep
+# =========================
+def make_county_time_data(selected_county_names):
+
+    filtered = df[
+        df["county_name"].isin(selected_county_names)
+    ].copy()
+
+    summary = (
+        filtered.groupby(
+            ["ds", "county_geoid", "county_name"],
+            as_index=False
+        )
+        .agg(
+            mean_percent_change=("percent_change", "mean"),
+            median_percent_change=("percent_change", "median")
+        )
+    )
+
+    return summary
 
 # =========================
 # Map plotting function
@@ -199,6 +237,45 @@ for idx, plot_date in enumerate(selected_dates):
 
     with cols[idx]:
         st.pyplot(fig)
+
+# =========================
+# County time series plots
+# =========================
+st.header("County Time Series")
+
+time_data = make_county_time_data(selected_counties)
+
+if not time_data.empty:
+
+    fig_ts, ax = plt.subplots(figsize=(12, 6))
+
+    sns.lineplot(
+        data=time_data,
+        x="ds",
+        y="mean_percent_change",
+        hue="county_name",
+        marker="o",
+        ax=ax
+    )
+
+    ax.axhline(
+        y=0,
+        color="black",
+        linewidth=0.5,
+        linestyle="--"
+    )
+
+    ax.set_title("County Percent Change Over Time")
+
+    ax.set_xlabel("")
+    ax.set_ylabel("% Change vs Baseline")
+
+    plt.xticks(rotation=45)
+
+    st.pyplot(fig_ts)
+
+else:
+    st.warning("No county data available.")
 
 # =========================
 # Optional data preview
