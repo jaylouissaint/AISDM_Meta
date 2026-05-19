@@ -276,3 +276,47 @@ make_percent_change_map(
   zoom = 7,
   bbox_buffer = 0.5
 )
+
+#-----------Investigation of mean v median---------------
+# Might not even use but want thoughts on which to use, not many outliers present but there will be a lot of 0s pulling mean down
+# Facetted plotting function using median percent change
+plot_county_time_series_faceted_median <- function(time_data, plot_title) {
+  ggplot(time_data, aes(x = ds, y = median_percent_change, group = county_name)) +
+    geom_hline(yintercept = 0, linewidth = 0.3) +
+    geom_line(linewidth = 0.6) +
+    geom_point(size = 1) +
+    facet_wrap(~ county_name, scales = "free_y") +
+    scale_y_continuous(
+      labels = scales::label_number(suffix = "%", accuracy = 1)
+    ) +
+    labs(
+      title = plot_title,
+      subtitle = "County-level median percent change from baseline",
+      x = NULL,
+      y = "Median % Change vs Baseline"
+    ) +
+    theme_minimal()
+}
+
+high_time <- make_county_time_data(high_counties)
+
+plot_county_time_series_faceted_median(
+  high_time,
+  "% Population Density Change Over Time:\nHighest-Change Counties"
+)
+
+
+average_time <- make_county_time_data(average_counties)
+
+plot_county_time_series_faceted_median(
+  average_time,
+  "% Population Density Change Over Time:\nAverage-Change Counties"
+)
+
+
+low_time <- make_county_time_data(low_counties)
+
+plot_county_time_series_faceted_median(
+  low_time,
+  "% Population Density Change Over Time:\nLowest-Change Counties"
+)
