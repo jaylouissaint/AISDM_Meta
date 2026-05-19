@@ -11,6 +11,7 @@ format:
   pdf:
     colorlinks: true
     pdf-engine: xelatex
+    tbl-cap-location: bottom
 ---
 
 
@@ -503,21 +504,27 @@ plot_county_time_series(
 
 
 
-```{r tbl-summary-table, tbl.cap = "Bottom 20 county-to-county crisis movement flows", output = T}
-tk_mp_data_admin <- read_csv(here("Outputs", "tk_movement_between_places_aggregated_admin.csv"),
+```{r, output = T}
+#| label: tbl-summary-table
+#| tbl-cap: "The bottom 20 county-to-county crisis movement flows are all at zero."
+tk_mp_data_bing <- read_csv(here("Outputs", "tk_movement_between_places_aggregated_bing.csv"),
                              show_col_types = F)
-county_flows <- tk_mp_data_admin |>
+county_flows <- tk_mp_data_bing |>
   group_by(start_county_name, end_county_name) |>
   summarise(
     total_crisis_movement = sum(n_crisis, na.rm = TRUE),
     avg_z_score = mean(z_score, na.rm = TRUE),
     .groups = "drop"
   ) |>
-  arrange(desc(total_crisis_movement))
+  arrange(total_crisis_movement)
 
 county_flows |>
   slice_head(n = 20) |>
-  gt()
+  gt() |>
+  tab_header(
+    title = "Bottom 20 county-to-county crisis movement flows",
+    subtitle = "Source: Bing Tiles"
+  )
 
 ```
 
@@ -527,7 +534,7 @@ county_flows |>
 
 ```{r}
 
-make_demographics_table <- function(file_name,
+make_demographics_table <- function(file_name, 
                                     map_date = NULL,
                                     date_col = "ds",
                                     value_col = "percent_change",
@@ -648,6 +655,9 @@ make_demographics_table <- function(file_name,
 
 
 ```{r, output = T}
+#| label: tbl-bing02-inc
+#| tbl-cap: "There are a few counties with high population density change but low total population."
+
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   map_date = "2026-02-02",
@@ -658,6 +668,9 @@ make_demographics_table(
 ```
 
 ```{r, output = T}
+#| label: tbl-bing02-dec
+#| tbl-cap: "Most of the counties with the lowest population density change have fairly high vehicular access."
+
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   n_counties = 15,
@@ -669,6 +682,9 @@ make_demographics_table(
 ```
 
 ```{r, output = T}
+#| label: tbl-bing12-inc
+#| tbl-cap: "Issaquena has the highest population density but notably small population size."
+
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   map_date = "2026-02-12",
@@ -679,6 +695,9 @@ make_demographics_table(
 ```
 
 ```{r, output = T}
+#| label: tbl-bing12-dec
+#| tbl-cap: "Similar to Feb 2nd, the counties with strong negative population density change also have high levels of vehicular access."
+
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   n_counties = 15,
@@ -686,49 +705,6 @@ make_demographics_table(
   desc = F,
   source = "Bing Tiles",
   table_title = "Counties with Most Decreased Population Density on 2026-02-12"
-) 
-```
-
-
-```{r, output = T}
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  map_date = "2026-01-30",
-  n_counties = 15,
-  source = "Administrative Regions",
-  table_title = "Counties with Most Increased Population Density on 2026-01-30"
-) 
-```
-
-```{r, output = T}
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  n_counties = 15,
-  map_date = "2026-01-30",
-  desc = F,
-  source = "Administrative Regions",
-  table_title = "Counties with Most Decreased Population Density on 2026-01-30"
-) 
-```
-
-```{r, output = T}
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  map_date = "2026-02-12",
-  n_counties = 15,
-  source = "Administrative Regions",
-  table_title = "Counties with Most Increased Population Density on 2026-02-12"
-) 
-```
-
-```{r, output = T}
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  n_counties = 15,
-  map_date = "2026-02-12",
-  desc = F,
-  source = "Administrative Regions",
-  table_title = "Counties with Most Decreased Population Density on 2026-02-12"
-) 
+  ) 
 ```
 
