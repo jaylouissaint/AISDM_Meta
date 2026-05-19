@@ -16,71 +16,6 @@ format:
 
 Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
 
-# Summary
-
-A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Specifically, Tennessee, Kentucky Several states experienced network outages and extremely cold temperatures. 
-
-The following visualizations are developed based on Meta AI for Good's data through Facebook. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
-
-# How the Data Is Constructed
-
-The Facebook data used in this report comes from Meta’s Data for Good crisis datasets. In plain terms, these datasets use activity from Facebook users or Facebook business Pages to estimate how people, population density, network coverage, and business activity change during a crisis. The data does not represent everyone in the affected area. For population and movement datasets, it only represents Facebook app users who have Location Services enabled. For business activity, it represents qualifying Facebook business Pages with enough activity to be included while preserving privacy. 
-
-The data is constructed by comparing what is observed during the crisis period to what was typical before the crisis. For example, population density during the storm is compared to a pre-crisis baseline. Movement during the storm is compared to normal movement patterns between the same places before the event. Business activity is compared to normal posting behavior from business pages before the crisis. Because the data is relative to a baseline, the main signal is not the raw count itself, but whether a place is above or below its expected level.
-
-Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. 
-
-Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time. This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, the reported time windows are still based on Pacific Time, which should be kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
-Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. When the data is provided as Bing tiles, each observation is tied to a grid cell with a latitude and longitude. When we add county information to those data, we are not changing the original measurement. Instead, we are assigning each tile or point to the county that contains it. This allows the tile-level data to be summarized at the county level.
-
-For example, a Bing tile located inside Davidson County, Tennessee would be assigned the Davidson County name and GEOID. If many Bing tiles fall within Davidson County, their values can then be averaged, summed, or otherwise summarized to produce a county-level measure. This is useful for reporting, but it is not identical to receiving an administrative-region dataset directly from Meta. The administrative-region dataset is already aggregated within county or state boundaries by Meta, while the Bing tile version requires us to overlay the tile locations onto county boundaries.
-
-
-# Facebook Data Definitions
-
-- **Baseline Ratio**: Ratio of people using the Facebook app who have turned on the Location Services device setting on their mobile device that are present in a specific tile during the baseline period over users in all tiles in the boundary box defining the crisis
-
-- **Crisis Ratio**: Ratio of people using the Facebook app who have turned on the Location Services device setting on their mobile device that are present in a specific tile during the 8-hour window over users in all tiles in the boundary box defining the crisis
-
-- **Population Change Density (%)**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)
-
-- **Time Windows**: aggregated over 3 fixed 8-hour time windows, beginning at 00:00, 08:00 and 16:00, that represent changes in population density
-
-- **Bing Tiles**: equivalent to roughly 2.4 kilometers on a side near the equator or the size of 6 x 6 city blocks
-
-- **Administrative Regions**: the polygon boundaries for administrative regions derived from the Database of Global Administrative Areas, also known as GADM.
-
-
-
-# Outside Data Added
-
-In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
-
-The demographic data is joined using `county_geoid`, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
-
-# Aggregation Choices
-
-For county-level maps, the data is summarized by county and date. When multiple observations fall within the same county on the same date, the report uses the average percent change to represent the county. This choice is appropriate for percent-based indicators because summing percentages would not be meaningful.
-
-For population count variables, such as baseline population or crisis population, summing can be used when the goal is to estimate total observed users across tiles or regions. For percent change, z-scores, or ratios, averaging is more appropriate because these variables already describe relative change.
-
-For movement data, origin and destination counties are treated separately. Each row represents movement from a starting location to an ending location, so the analysis keeps both `start_county_geoid` and `end_county_geoid`. This avoids incorrectly collapsing movement into a single county and preserves the direction of movement.
-
-# Limitations
-
-These datasets should be interpreted as indicators of crisis-related change, not exact measures of the full population. The population and movement data only include Facebook users with Location Services enabled, so the sample may not represent all residents equally. Areas with fewer Facebook users or lower Location Services usage may be less reliable.
-
-Privacy protections also affect interpretation. Small counts may be suppressed or removed, which can especially affect rural areas. For movement data, this means it is not reliable to calculate exact net flows by simply adding inbound and outbound movement, because some small movement vectors are excluded. 
-
-The baseline period is limited to the pre-crisis period available to Meta. This means the analysis does not have a long historical record of pre-crisis behavior. As a result, seasonal changes, holidays, or unusual pre-crisis conditions may affect the baseline. The data is useful for rapid situational awareness, but it should not be interpreted as a complete long-term population or economic dataset.
-
-Finally, the data is time-limited. The documentation notes that some datasets are accessible for 90 days after the final update day and then discarded, which limits longer-term reproducibility and longitudinal analysis.
-
-
-{{<pagebreak>}}
-
-# Movement
-
 ```{r}
 library(ggplot2)
 library(gt)
@@ -221,6 +156,204 @@ make_percent_change_map <- function(file_name,
   return(combined_plot)
 }
 ```
+
+
+```{r}
+bing_vs_admin_map <- function(date_col = "ds",
+                                    value_col = "percent_change",
+                                    selected_date = NULL,   # Can be length 1 or 2
+                                    output_plot_name = NULL,
+                                    title_prefix = "Population Density Change (%)") {
+  
+  # Read file
+  df_bing <- read_csv(
+    here("outputs", "tk_facebook_pop_aggregated_bing.csv"),
+    show_col_types = FALSE
+  )
+  
+  df_admin <- read_csv(
+    here("outputs", "tk_facebook_pop_aggregated_admin.csv"),
+    show_col_types = FALSE
+  )
+  
+  # Determine which dates to use
+  # Combine first so date checks use all available data
+  common_cols <- intersect(names(df_bing), names(df_admin))
+  df_combined <- rbind(df_bing[, common_cols], df_admin[, common_cols])
+  
+  # Determine which dates to use
+  if (is.null(selected_date)) {
+    plot_dates <- max(df_combined[[date_col]], na.rm = TRUE)
+  } else {
+    if (!all(selected_date %in% df_combined[[date_col]])) {
+      stop("One or more selected_date values are not available in the data.")
+    }
+    plot_dates <- selected_date
+  }
+  
+ # Compute global fill range using the summarized county-level data
+  all_summarized <- df_combined |>
+    filter(.data[[date_col]] %in% plot_dates) |>
+    group_by(county_geoid, county_name, county_state, !!sym(date_col)) |>
+    summarise(mean_percent_change = mean(.data[[value_col]], na.rm = TRUE), .groups = "drop")
+  
+  fill_range <- all_summarized |>
+    summarise(min_val = min(mean_percent_change, na.rm = TRUE),
+              max_val = max(mean_percent_change, na.rm = TRUE))
+  
+  # Function to create a single map
+  create_map <- function(df, source, plot_date = plot_dates) {
+
+    latest_county <- df |>
+      filter(.data[[date_col]] == plot_date) |>
+      group_by(county_geoid, county_name, county_state) |>
+      summarise(
+        mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
+        .groups = "drop"
+      )
+  
+    map_data <- counties_sf |>
+      inner_join(latest_county, by = "county_geoid")
+  
+    county_bbox <- st_bbox(map_data)
+  
+    relevant_states <- states_sf |>
+      st_filter(map_data, .predicate = st_intersects)
+  
+    ggplot() +
+      geom_sf(
+        data = map_data,
+        aes(fill = mean_percent_change),
+        linewidth = 0.2
+      ) +
+      geom_sf(
+        data = relevant_states,
+        fill = NA,
+        color = "black",
+        linewidth = 0.7
+      ) +
+      scale_fill_gradient2(
+        limits = c(fill_range$min_val, fill_range$max_val),
+        oob = squish,
+        labels = label_number(suffix = "%", accuracy = 1)
+      ) +
+      labs(
+        title = paste0(plot_date, " (", source, ")"),
+        fill = "% Change vs Baseline"
+      ) +
+      coord_sf(
+        xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
+        ylim = c(county_bbox["ymin"], county_bbox["ymax"])
+      ) +
+      theme_minimal()
+  }
+  
+  # Create plots
+  plots <- list(
+  create_map(df_bing, source = "Bing"),
+  create_map(df_admin, source = "Admin")
+)
+  
+  # Combine plots side-by-side with shared legend
+  if (length(plots) == 1) {
+    combined_plot <- plots[[1]] +
+      ggtitle(paste(title_prefix, plots[[1]]$labels$title))
+  } else {
+    combined_plot <- wrap_plots(plots, ncol = length(plots), guides = "collect") &
+      theme(legend.position = "bottom")
+    
+    # Shared title
+    combined_plot <- combined_plot + plot_annotation(
+    title = title_prefix,
+    theme = theme(
+      plot.title = element_text(hjust = 0.5)  # centers the title
+    )
+  )
+  }
+  
+  # Save if requested
+  if (!is.null(output_plot_name)) {
+    ggsave(
+      filename = here("outputs", output_plot_name),
+      plot = combined_plot,
+      width = ifelse(length(plot_dates) == 2, 16, 10),
+      height = 7
+    )
+  }
+  
+  return(combined_plot)
+}
+```
+
+```{r, output = T}
+bing_vs_admin_map(selected_date = "2026-02-12")
+```
+
+
+# Summary
+
+A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Specifically, Tennessee, Kentucky Several states experienced network outages and extremely cold temperatures. 
+
+The following visualizations are developed based on Meta AI for Good's data through Facebook. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
+
+# How the Data Is Constructed
+
+The Facebook data used in this report comes from Meta’s Data for Good crisis datasets. In plain terms, these datasets use activity from Facebook users or Facebook business Pages to estimate how people, population density, network coverage, and business activity change during a crisis. The data does not represent everyone in the affected area. For population and movement datasets, it only represents Facebook app users who have Location Services enabled. For business activity, it represents qualifying Facebook business Pages with enough activity to be included while preserving privacy. 
+
+The data is constructed by comparing what is observed during the crisis period to what was typical before the crisis. For example, population density during the storm is compared to a pre-crisis baseline. Movement during the storm is compared to normal movement patterns between the same places before the event. Business activity is compared to normal posting behavior from business pages before the crisis. Because the data is relative to a baseline, the main signal is not the raw count itself, but whether a place is above or below its expected level.
+
+Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. 
+
+Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time. This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, the reported time windows are still based on Pacific Time, which should be kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
+Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. When the data is provided as Bing tiles, each observation is tied to a grid cell with a latitude and longitude. When we add county information to those data, we are not changing the original measurement. Instead, we are assigning each tile or point to the county that contains it. This allows the tile-level data to be summarized at the county level.
+
+For example, a Bing tile located inside Davidson County, Tennessee would be assigned the Davidson County name and GEOID. If many Bing tiles fall within Davidson County, their values can then be averaged, summed, or otherwise summarized to produce a county-level measure. This is useful for reporting, but it is not identical to receiving an administrative-region dataset directly from Meta. The administrative-region dataset is already aggregated within county or state boundaries by Meta, while the Bing tile version requires us to overlay the tile locations onto county boundaries.
+
+
+# Facebook Data Definitions
+
+- **Baseline Ratio**: Ratio of people using the Facebook app who have turned on the Location Services device setting on their mobile device that are present in a specific tile during the baseline period over users in all tiles in the boundary box defining the crisis
+
+- **Crisis Ratio**: Ratio of people using the Facebook app who have turned on the Location Services device setting on their mobile device that are present in a specific tile during the 8-hour window over users in all tiles in the boundary box defining the crisis
+
+- **Population Change Density (%)**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)
+
+- **Time Windows**: aggregated over 3 fixed 8-hour time windows, beginning at 00:00, 08:00 and 16:00, that represent changes in population density
+
+- **Bing Tiles**: equivalent to roughly 2.4 kilometers on a side near the equator or the size of 6 x 6 city blocks
+
+- **Administrative Regions**: the polygon boundaries for administrative regions derived from the Database of Global Administrative Areas, also known as GADM.
+
+
+
+# Outside Data Added
+
+In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
+
+The demographic data is joined using `county_geoid`, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
+
+# Aggregation Choices
+
+For county-level maps, the data is summarized by county and date. When multiple observations fall within the same county on the same date, the report uses the average percent change to represent the county. This choice is appropriate for percent-based indicators because summing percentages would not be meaningful.
+
+For population count variables, such as baseline population or crisis population, summing can be used when the goal is to estimate total observed users across tiles or regions. For percent change, z-scores, or ratios, averaging is more appropriate because these variables already describe relative change.
+
+For movement data, origin and destination counties are treated separately. Each row represents movement from a starting location to an ending location, so the analysis keeps both `start_county_geoid` and `end_county_geoid`. This avoids incorrectly collapsing movement into a single county and preserves the direction of movement.
+
+# Limitations
+
+These datasets should be interpreted as indicators of crisis-related change, not exact measures of the full population. The population and movement data only include Facebook users with Location Services enabled, so the sample may not represent all residents equally. Areas with fewer Facebook users or lower Location Services usage may be less reliable.
+
+Privacy protections also affect interpretation. Small counts may be suppressed or removed, which can especially affect rural areas. For movement data, this means it is not reliable to calculate exact net flows by simply adding inbound and outbound movement, because some small movement vectors are excluded. 
+
+The baseline period is limited to the pre-crisis period available to Meta. This means the analysis does not have a long historical record of pre-crisis behavior. As a result, seasonal changes, holidays, or unusual pre-crisis conditions may affect the baseline. The data is useful for rapid situational awareness, but it should not be interpreted as a complete long-term population or economic dataset.
+
+Finally, the data is time-limited. The documentation notes that some datasets are accessible for 90 days after the final update day and then discarded, which limits longer-term reproducibility and longitudinal analysis.
+
+
+{{<pagebreak>}}
+
+# Movement
 
 ## % Population Density Change
 
