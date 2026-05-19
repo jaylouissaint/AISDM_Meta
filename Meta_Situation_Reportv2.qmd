@@ -74,7 +74,7 @@ Privacy protections also affect interpretation. Small counts may be suppressed o
 
 The baseline period is limited to the pre-crisis period available to Meta. This means the analysis does not have a long historical record of pre-crisis behavior. As a result, seasonal changes, holidays, or unusual pre-crisis conditions may affect the baseline. The data is useful for rapid situational awareness, but it should not be interpreted as a complete long-term population or economic dataset.
 
-Finally, the data is time-limited. The documentation notes that some datasets are accessible for 90 days after the final update day and then discarded, which limits longer-term reproducibility and longitudinal analysis. :contentReference[oaicite:4]{index=4}
+Finally, the data is time-limited. The documentation notes that some datasets are accessible for 90 days after the final update day and then discarded, which limits longer-term reproducibility and longitudinal analysis.
 
 
 {{<pagebreak>}}
