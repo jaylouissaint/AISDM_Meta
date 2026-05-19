@@ -14,6 +14,7 @@ format:
 ---
 
 
+
 Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
 
 ```{r}
@@ -285,10 +286,6 @@ bing_vs_admin_map <- function(date_col = "ds",
 }
 ```
 
-```{r, output = T}
-bing_vs_admin_map(selected_date = "2026-02-12")
-```
-
 
 # Summary
 
@@ -302,7 +299,11 @@ The Facebook data used in this report comes from Meta’s Data for Good crisis d
 
 The data is constructed by comparing what is observed during the crisis period to what was typical before the crisis. For example, population density during the storm is compared to a pre-crisis baseline. Movement during the storm is compared to normal movement patterns between the same places before the event. Business activity is compared to normal posting behavior from business pages before the crisis. Because the data is relative to a baseline, the main signal is not the raw count itself, but whether a place is above or below its expected level.
 
-Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. 
+Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. These are two different approximations of the same general region and same time window, but they can show different rates of population density change ( @fig-bing-vs-admin).
+
+```{r fig-bing-vs-admin, fig.cap = "Changes in population density vary when represented by data from bing tiles or by data from administrative regions, even in the same region and time window.", output = T}
+bing_vs_admin_map(selected_date = "2026-02-12")
+```
 
 Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time. This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, the reported time windows are still based on Pacific Time, which should be kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
 Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. When the data is provided as Bing tiles, each observation is tied to a grid cell with a latitude and longitude. When we add county information to those data, we are not changing the original measurement. Instead, we are assigning each tile or point to the county that contains it. This allows the tile-level data to be summarized at the county level.
@@ -358,7 +359,7 @@ Finally, the data is time-limited. The documentation notes that some datasets ar
 ## % Population Density Change
 
 
-```{r, output = T}
+```{r fig-pop-bing, fig.cap = "When showing population density change with Bing tiles, there is little negative changes at these two dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
@@ -367,7 +368,7 @@ make_percent_change_map(
 ```
 
 
-```{r, output = T}
+```{r fig-pop-admin, fig.cap = "When showing population density change with administrative regions, there are a few counties with very strong negative change during both dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_admin.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
@@ -467,22 +468,27 @@ plot_county_time_series_faceted <- function(time_data, plot_title) {
 ```
 
 
-```{r, output = T}
+```{r fig-TS-high, fig.cap = "The three counties with the highest change have positive change or negative change during this entire time period.", output = T}
 high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series(
   high_time,
   "% Population Density Change Over Time:\nHighest-Change Counties"
 )
+```
 
 
+```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population density change with both positive and negative changes.", output = T}
 average_time <- make_county_time_data(average_counties)
 
 plot_county_time_series(
   average_time,
   "% Population Density Change Over Time:\nAverage-Change Counties"
 )
+```
 
+
+```{r fig-TS-low, fig.cap = "The three counties with the lowest change have a notable drop into extreme negative population density change on February 9th.",  output = T}
 low_time <- make_county_time_data(low_counties)
 
 plot_county_time_series(
