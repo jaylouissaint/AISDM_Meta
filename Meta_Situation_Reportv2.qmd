@@ -506,7 +506,7 @@ plot_county_time_series(
 
 ```{r, output = T}
 #| label: tbl-summary-table
-#| tbl-cap: "The bottom 20 county-to-county crisis movement flows are all at zero."
+#| tbl-cap: "The bottom 20 county-to-county crisis movement flows are all at zero or ten, likely due to data-collection thresholds for privacy concerns."
 tk_mp_data_bing <- read_csv(here("Outputs", "tk_movement_between_places_aggregated_bing.csv"),
                              show_col_types = F)
 county_flows <- tk_mp_data_bing |>
