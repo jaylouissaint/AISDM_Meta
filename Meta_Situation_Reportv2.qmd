@@ -1,15 +1,13 @@
 ---
 title: "Winter Storm Fern Situation Report"
 subtitle: "January 2026"
-
 execute: 
   warning: false
   message: false
   output: false
   echo: false
-
 fig-pos: H
-
+bibliography: references.bib
 format:
   pdf:
     colorlinks: true
@@ -301,9 +299,9 @@ bing_vs_admin_map <- function(date_col = "ds",
 
 # Summary
 
-A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Specifically, Tennessee, Kentucky Several states experienced network outages and extremely cold temperatures. 
+A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Several states experienced network outages and extremely cold temperatures. For example, emergency declarations were issued in Arkansas, Georgia, Indiana, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, South Carolina, Tennessee, Virginia, and West Virginia [@crs_in12644].
 
-The following visualizations are developed based on Meta AI for Good's data through Facebook. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
+The following visualizations are developed based on Meta AI for Good's data through Facebook with a focus on Tennessee and Kentucky.. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
 
 # How the Data Is Constructed
 
@@ -347,7 +345,7 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 # Outside Data Added
 
-In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
+In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey [@acs]. This demographic data was incorporated with the use of the `tidycensus` package [@tidycensus]. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
 
 The demographic data is joined using `county_geoid`, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
 
@@ -761,3 +759,6 @@ make_demographics_table(
   ) 
 ```
 
+{{< pagebreak >}}
+
+# References
