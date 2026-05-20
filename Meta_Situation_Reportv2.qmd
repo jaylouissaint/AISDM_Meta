@@ -305,8 +305,10 @@ Geographically, the data is reported in two main ways: Bing tiles and administra
 ```{r fig-bing-vs-admin, fig.cap = "Changes in population density vary when represented by data from bing tiles or by data from administrative regions, even in the same region and time window.", output = T}
 bing_vs_admin_map(selected_date = "2026-02-12")
 ```
-**Takeaways**
+**Takeaways** (@fig-bing-vs-admin)
+
 - Bing tile results and administrative-region results should not be treated as interchangeable
+
 - The strongest changes appear concentrated in a small number of counties rather than spread evenly across the region
 
 
@@ -371,8 +373,11 @@ make_percent_change_map(
   title_prefix = "Population Density Change (%) - Bing Tiles"
 )
 ```
-**Takeaways**
+
+**Takeaways** (@fig-pop-bing)
+
 - The overall spatial pattern appears fairly stable between the two dates
+
 - There is little visible negative population-density change in the Bing tile version
 
 ```{r fig-pop-admin, fig.cap = "When showing population density change with administrative regions, there are a few counties with very strong negative change during both dates.", output = T}
@@ -382,9 +387,12 @@ make_percent_change_map(
   title_prefix = "Population Density Change (%) - Admin Regions"
 )
 ```
-**Takeaways**
+**Takeaways** (@fig-pop-admin)
+
 - The administrative-region maps show more visible negative population-density change than the Bing tile maps.
+
 - A few counties stand out with strong decreases on both February 2 and February 12.
+
 - The contrast with Figure 2 shows that the same crisis can look different depending on whether the data is summarized by tiles or administrative regions.
 
 ## Time Series of Movement
@@ -489,11 +497,16 @@ plot_county_time_series(
   "% Population Density Change Over Time:\nHighest-Change Counties"
 )
 ```
-**Takeaways**
+**Takeaways** (@fig-TS-high)
+
 - Fairfield and Issaquena show the largest positive population-density changes over the time period.
+
 - Issaquena rises sharply near the end of the period, reaching close to 100% change.
+
 - Sevier is included among the highest-change counties because of large absolute change, but its trend is negative rather than positive.
+
 - The figure shows that “highest change” includes both large increases and large decreases when counties are selected using absolute change.
+
 - The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes.
 
 ```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population density change with both positive and negative changes.", output = T}
@@ -504,7 +517,8 @@ plot_county_time_series(
   "% Population Density Change Over Time:\nAverage-Change Counties"
 )
 ```
-**Takeaways**
+**Takeaways** (@fig-TS-medium)
+
 - These counties provide a useful comparison group for interpreting the more extreme counties.
 
 
@@ -517,8 +531,11 @@ plot_county_time_series(
 )
 
 ```
-**Takeaways**
+**Takeaways** (@fig-TS-low)
+
 - I got nothing
+
+{{<pagebreak>}}
 
 ## Places
 
@@ -547,8 +564,10 @@ county_flows |>
   )
 
 ```
-**Takeaways**
+**Takeaways** (@tbl-summary-table)
+
 - The table is more useful as a data-quality warning than as a substantive movement analysis.
+
 - Because movement vectors with small counts can be suppressed, these low-flow values should not be interpreted as exact zero movement.
 
 {{< pagebreak >}}
