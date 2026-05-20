@@ -478,7 +478,8 @@ make_percent_change_map(
 
 
 ```{r}
-tk_fb_data_admin <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F)
+tk_fb_data_admin <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F) |>
+  mutate(county_name = gsub(" County", "", county_name_acs))
 # Summarize county-level movement/change intensity 
 # Have to decide between median and mean
 county_change_summary <- tk_fb_data_admin |>
