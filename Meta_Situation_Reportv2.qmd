@@ -1,20 +1,31 @@
 ---
 title: "Winter Storm Fern Situation Report"
 subtitle: "January 2026"
+
 execute: 
   warning: false
   message: false
   output: false
   echo: false
+
 fig-pos: H
+
 format:
   pdf:
     colorlinks: true
     pdf-engine: xelatex
     tbl-cap-location: bottom
+    include-in-header:
+      text: |
+        \usepackage{etoolbox}
+
+        \makeatletter
+        \patchcmd{\@makefntext}
+          {\parindent 1em}
+          {\parindent 1em\leftskip -0.5in\rightskip -0.5in}
+          {}{}
+        \makeatother
 ---
-
-
 
 Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
 
