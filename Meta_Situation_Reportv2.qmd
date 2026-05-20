@@ -389,6 +389,41 @@ make_percent_change_map(
 
 - There is little visible negative population-density change in the Bing tile version
 
+- On February 2nd, the counties with the most increased population density are (@tbl-bing02-inc):
+
+  - Fairfield, South Carolina (30.5%)
+  
+  - Issaquena, Mississippi (25.5%)
+  
+  - Grenada, Mississippi (17.9%)
+
+- On February 2nd, the counties with the most decreased population density are (@tbl-bing02-dec):
+  - Sevier, Tennessee (-12.5%)
+  
+  - Carroll, Ohio (-9.6%)
+  
+  - Jefferson, Arkansas (-8.9%)
+
+- On February 12th, the counties with the most increased population density are (@tbl-bing12-inc):
+
+  - Issaquena, Mississippi (59.7%)
+  
+  - Fairfield, South Carolina (45.2%)
+  
+  - Osage, Missouri (12.6%)
+  
+  - Perry, Alabama (12.6%)
+
+- On February 12th, the counties with the most decreased population density are (@tbl-bing12-dec):
+
+  - Sevier, Tenneessee (-19.6%)
+  
+  - Laurens, Georgia (-15.6%)
+  
+  - Fannin, Georgia (-13.8%)
+  
+  - Alleghany, North Carolina (-13.8%)
+
 ```{r fig-pop-admin, fig.cap = "When showing population density change with administrative regions, there are a few counties with very strong negative change during both dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_admin.csv",
@@ -403,6 +438,41 @@ make_percent_change_map(
 - A few counties stand out with strong decreases on both February 2 and February 12.
 
 - The contrast with Figure 2 shows that the same crisis can look different depending on whether the data is summarized by tiles or administrative regions.
+
+- On February 2nd, the counties with the most increased population density are (@tbl-admin02-inc):
+
+  - Richland, Louisiana (17.1%)
+  
+  - Oktibbeha, Mississippi (11.7%)
+  
+  - Grenada, Mississippi (11.2%)
+
+- On February 2nd, the counties with the most increased population density are (@tbl-admin02-dec):
+
+  - Sevier, Tenneessee (-22.8%)
+  
+  - Issaquena, Mississippi (-12.3%)
+  
+  - Swain, North Carolina (-11.3%)
+
+- On February 12th, the counties with the most increased population density are (@tbl-admin12-inc):
+
+  - Lafayette, Mississippi (21.4%)
+  
+  - Richland, Louisiana (16.7%)
+  
+  - Oktibbeha, Mississippi (12.2%)
+
+- On February 12th, the counties with the most increased population density are (@tbl-admin12-dec):
+
+  - Sevier, Tennessee (-22.8%)
+  
+  - Pope, Illinois (-12.5%)
+  
+  - Alleghany, North Carolina (-11.3%)
+  
+  - Fannin, Georgia (-11.3%)
+
 
 ## Time Series of Movement
 
@@ -777,6 +847,65 @@ make_demographics_table(
   map_date = "2026-02-12",
   desc = F,
   source = "Bing Tiles",
+  table_title = "Counties with Most Decreased Population Density on 2026-02-12"
+  ) 
+```
+
+
+```{r, output = T}
+#| label: tbl-admin02-inc
+#| tbl-cap: "Caption here."
+
+
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  map_date = "2026-02-02",
+  n_counties = 15,
+  source = "Administrative Regions",
+  table_title = "Counties with Most Increased Population Density on 2026-02-02"
+) 
+```
+
+```{r, output = T}
+#| label: tbl-admin02-dec
+#| tbl-cap: "Caption here."
+
+
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  n_counties = 15,
+  map_date = "2026-02-02",
+  desc = F,
+  source = "Administrative Regions",
+  table_title = "Counties with Most Decreased Population Density on 2026-02-02"
+) 
+```
+
+```{r, output = T}
+#| label: tbl-admin12-inc
+#| tbl-cap: "Caption here."
+
+
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  map_date = "2026-02-12",
+  n_counties = 15,
+  source = "Administrative Regions",
+  table_title = "Counties with Most Increased Population Density on 2026-02-12"
+) 
+```
+
+```{r, output = T}
+#| label: tbl-admin12-dec
+#| tbl-cap: "Caption here."
+
+
+make_demographics_table(
+  file_name = "tk_facebook_pop_aggregated_admin.csv",
+  n_counties = 15,
+  map_date = "2026-02-12",
+  desc = F,
+  source = "Administrative Regions",
   table_title = "Counties with Most Decreased Population Density on 2026-02-12"
   ) 
 ```
