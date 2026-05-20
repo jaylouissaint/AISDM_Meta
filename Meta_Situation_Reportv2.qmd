@@ -320,6 +320,7 @@ bing_vs_admin_map(selected_date = "2026-02-12")
 
 - The strongest changes appear concentrated in a small number of counties rather than spread evenly across the region
 
+- For example, on February 12th, the population density change for Issaquena, Mississippi is 59.7% based on Bing tiles and only -2% based on administrative regions.
 
 Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time. This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, the reported time windows are still based on Pacific Time, which should be kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
 Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. When the data is provided as Bing tiles, each observation is tied to a grid cell with a latitude and longitude. When we add county information to those data, we are not changing the original measurement. Instead, we are assigning each tile or point to the county that contains it. This allows the tile-level data to be summarized at the county level.
@@ -423,66 +424,16 @@ make_percent_change_map(
   - Fannin, Georgia (-13.8%)
   
   - Alleghany, North Carolina (-13.8%)
-
-```{r fig-pop-admin, fig.cap = "When showing population density change with administrative regions, there are a few counties with very strong negative change during both dates.", output = T}
-make_percent_change_map(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  selected_date = c("2026-02-02", "2026-02-12"),
-  title_prefix = "Population Density Change (%) - Admin Regions"
-)
-```
-**Takeaways** (@fig-pop-admin)
-
-- The administrative-region maps show more visible negative population-density change than the Bing tile maps.
-
-- A few counties stand out with strong decreases on both February 2 and February 12.
-
-- The contrast with Figure 2 shows that the same crisis can look different depending on whether the data is summarized by tiles or administrative regions.
-
-- On February 2nd, the counties with the most increased population density are (@tbl-admin02-inc):
-
-  - Richland, Louisiana (17.1%)
   
-  - Oktibbeha, Mississippi (11.7%)
-  
-  - Grenada, Mississippi (11.2%)
-
-- On February 2nd, the counties with the most increased population density are (@tbl-admin02-dec):
-
-  - Sevier, Tenneessee (-22.8%)
-  
-  - Issaquena, Mississippi (-12.3%)
-  
-  - Swain, North Carolina (-11.3%)
-
-- On February 12th, the counties with the most increased population density are (@tbl-admin12-inc):
-
-  - Lafayette, Mississippi (21.4%)
-  
-  - Richland, Louisiana (16.7%)
-  
-  - Oktibbeha, Mississippi (12.2%)
-
-- On February 12th, the counties with the most increased population density are (@tbl-admin12-dec):
-
-  - Sevier, Tennessee (-22.8%)
-  
-  - Pope, Illinois (-12.5%)
-  
-  - Alleghany, North Carolina (-11.3%)
-  
-  - Fannin, Georgia (-11.3%)
-
-
 ## Time Series of Movement
 
 
 ```{r}
-tk_fb_data_admin <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F) |>
+tk_fb_data_bing <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F) |>
   mutate(county_name = gsub(" County", "", county_name_acs))
 # Summarize county-level movement/change intensity 
 # Have to decide between median and mean
-county_change_summary <- tk_fb_data_admin |>
+county_change_summary <- tk_fb_data_bing |>
   mutate(ds = as.Date(ds)) |>
   group_by(county_geoid, county_name) |>
   summarise(
@@ -512,7 +463,7 @@ average_counties <- county_change_summary |>
 ```{r}
 # TS Prep function
 make_county_time_data <- function(selected_counties) {
-  tk_fb_data_admin |>
+  tk_fb_data_bing |>
     mutate(ds = as.Date(ds)) |>
     inner_join(
       selected_counties |> select(county_geoid, change_group),
@@ -848,65 +799,6 @@ make_demographics_table(
   map_date = "2026-02-12",
   desc = F,
   source = "Bing Tiles",
-  table_title = "Counties with Most Decreased Population Density on 2026-02-12"
-  ) 
-```
-
-
-```{r, output = T}
-#| label: tbl-admin02-inc
-#| tbl-cap: "Caption here."
-
-
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  map_date = "2026-02-02",
-  n_counties = 15,
-  source = "Administrative Regions",
-  table_title = "Counties with Most Increased Population Density on 2026-02-02"
-) 
-```
-
-```{r, output = T}
-#| label: tbl-admin02-dec
-#| tbl-cap: "Caption here."
-
-
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  n_counties = 15,
-  map_date = "2026-02-02",
-  desc = F,
-  source = "Administrative Regions",
-  table_title = "Counties with Most Decreased Population Density on 2026-02-02"
-) 
-```
-
-```{r, output = T}
-#| label: tbl-admin12-inc
-#| tbl-cap: "Caption here."
-
-
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  map_date = "2026-02-12",
-  n_counties = 15,
-  source = "Administrative Regions",
-  table_title = "Counties with Most Increased Population Density on 2026-02-12"
-) 
-```
-
-```{r, output = T}
-#| label: tbl-admin12-dec
-#| tbl-cap: "Caption here."
-
-
-make_demographics_table(
-  file_name = "tk_facebook_pop_aggregated_admin.csv",
-  n_counties = 15,
-  map_date = "2026-02-12",
-  desc = F,
-  source = "Administrative Regions",
   table_title = "Counties with Most Decreased Population Density on 2026-02-12"
   ) 
 ```
