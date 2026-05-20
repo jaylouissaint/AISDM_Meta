@@ -299,7 +299,7 @@ bing_vs_admin_map <- function(date_col = "ds",
 
 # Summary
 
-A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Several states experienced network outages and extremely cold temperatures. For example, emergency declarations were issued in Arkansas, Georgia, Indiana, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, South Carolina, Tennessee, Virginia, and West Virginia [@crs_in12644].
+A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the Eastern United States. Several states experienced network outages and extremely cold temperatures. For example, emergency declarations were issued in Arkansas, Georgia, Indiana, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, South Carolina, Tennessee, Virginia, and West Virginia [@crs_in12644]. Power outages due to downed trees and ice occurred in Southern States, such as Texas, Louisiana, Mississippi, and Tennessee. States from New England to New Mexico experienced significant snowfall, and sleet occurred in the Mid-Atlantic and Northeast.
 
 The following visualizations are developed based on Meta AI for Good's data through Facebook with a focus on Tennessee and Kentucky.. The data covers network coverage and population density from January 27 to February 10, with a focus on Tennessee and Kentucky and daily updates during the collection period.
 
@@ -518,6 +518,8 @@ plot_county_time_series(
 
 - The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes.
 
+- Both Fairfield and Issaquena almost constantly have population density change over 25%.
+
 ```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population density change with both positive and negative changes.", output = T}
 average_time <- make_county_time_data(average_counties)
 
@@ -530,6 +532,15 @@ plot_county_time_series(
 
 - These counties provide a useful comparison group for interpreting the more extreme counties.
 
+- In comparison to the high-change counties, these three counties have their percentage population density change constrained within [-4%, 4%], indicating much lower rates of population density change.
+
+- All counties have a drop in population density change at February 9th but with varying magnitudes.
+
+- The Grayson county has a somewhat monotonic decline with people initially coming in and then steadily moving out.
+
+- The Rowan county has constantly positive population density change, indicating incoming population, with a sharp drop on February 9th.
+
+- The Montogomery has constantly negative population density, indicating leaving populations, with a sharp spike at February 7th and a sharp drop at February 9th.
 
 ```{r fig-TS-low, fig.cap = "The three counties with the lowest change have a notable drop into extreme negative population density change on February 9th.",  output = T}
 low_time <- make_county_time_data(low_counties)
@@ -542,7 +553,13 @@ plot_county_time_series(
 ```
 **Takeaways** (@fig-TS-low)
 
-- I got nothing
+- These three counties follow a similar pattern with relatively stable populations around zero and a sharp drop at February 9th.
+
+- Cobb and DeKalb follow this pattern very closely and very similarly.
+
+- The Peach county has more variation with spikes at February 7th, February 9th and February 11th.
+
+- These counties never have strong positive population density change, implying that populations may have either entered before this time period or left after this time period, because the constant negative change indicates people leaving these counties.
 
 {{<pagebreak>}}
 
@@ -553,6 +570,7 @@ plot_county_time_series(
 ```{r, output = T}
 #| label: tbl-summary-table
 #| tbl-cap: "The bottom 20 county-to-county crisis movement flows are all at zero or ten, likely due to data-collection thresholds for privacy concerns."
+
 tk_mp_data_bing <- read_csv(here("Outputs", "tk_movement_between_places_aggregated_bing.csv"),
                              show_col_types = F)
 county_flows <- tk_mp_data_bing |>
@@ -709,6 +727,7 @@ make_demographics_table <- function(file_name,
 #| label: tbl-bing02-inc
 #| tbl-cap: "There are a few counties with high population density change but low total population."
 
+
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   map_date = "2026-02-02",
@@ -721,6 +740,7 @@ make_demographics_table(
 ```{r, output = T}
 #| label: tbl-bing02-dec
 #| tbl-cap: "Most of the counties with the lowest population density change have fairly high vehicular access."
+
 
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
@@ -736,6 +756,7 @@ make_demographics_table(
 #| label: tbl-bing12-inc
 #| tbl-cap: "Issaquena has the highest population density but notably small population size."
 
+
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   map_date = "2026-02-12",
@@ -748,6 +769,7 @@ make_demographics_table(
 ```{r, output = T}
 #| label: tbl-bing12-dec
 #| tbl-cap: "Similar to Feb 2nd, the counties with strong negative population density change also have high levels of vehicular access."
+
 
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
