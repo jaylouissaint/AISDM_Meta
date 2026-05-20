@@ -305,6 +305,10 @@ Geographically, the data is reported in two main ways: Bing tiles and administra
 ```{r fig-bing-vs-admin, fig.cap = "Changes in population density vary when represented by data from bing tiles or by data from administrative regions, even in the same region and time window.", output = T}
 bing_vs_admin_map(selected_date = "2026-02-12")
 ```
+**Takeaways**
+- Bing tile results and administrative-region results should not be treated as interchangeable
+- The strongest changes appear concentrated in a small number of counties rather than spread evenly across the region
+
 
 Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time. This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, the reported time windows are still based on Pacific Time, which should be kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
 Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. When the data is provided as Bing tiles, each observation is tied to a grid cell with a latitude and longitude. When we add county information to those data, we are not changing the original measurement. Instead, we are assigning each tile or point to the county that contains it. This allows the tile-level data to be summarized at the county level.
@@ -367,7 +371,9 @@ make_percent_change_map(
   title_prefix = "Population Density Change (%) - Bing Tiles"
 )
 ```
-
+**Takeaways**
+- The overall spatial pattern appears fairly stable between the two dates
+- There is little visible negative population-density change in the Bing tile version
 
 ```{r fig-pop-admin, fig.cap = "When showing population density change with administrative regions, there are a few counties with very strong negative change during both dates.", output = T}
 make_percent_change_map(
@@ -376,7 +382,10 @@ make_percent_change_map(
   title_prefix = "Population Density Change (%) - Admin Regions"
 )
 ```
-
+**Takeaways**
+- The administrative-region maps show more visible negative population-density change than the Bing tile maps.
+- A few counties stand out with strong decreases on both February 2 and February 12.
+- The contrast with Figure 2 shows that the same crisis can look different depending on whether the data is summarized by tiles or administrative regions.
 
 ## Time Series of Movement
 
@@ -410,6 +419,7 @@ average_counties <- county_change_summary |>
   slice_min(distance_from_average, n = 3) |>
   mutate(change_group = "Average change")
 ```
+
 
 ```{r}
 # TS Prep function
@@ -467,7 +477,9 @@ plot_county_time_series_faceted <- function(time_data, plot_title) {
 }
 
 ```
+The counties are grouped by average absolute population-density change over the recording period.[^avg-change]
 
+[^avg-change]: The percent changes are summarized over the full recording period for each county. For each county, the absolute value of the percent change is taken at each time point, and those absolute changes are averaged across the 14-day period. This creates a single measure of how much each county deviated from baseline, regardless of whether the change was positive or negative. Counties are then compared using this average absolute change to identify the highest-change, lowest-change, and average-change counties. The county-level change measure is defined as $\text{AvgAbsChange}_i = \frac{1}{T_i}\sum_{t=1}^{T_i} |p_{it}|$, where $p_{it}$ is the percent change for county $i$ at time $t$, and $T_i$ is the number of time periods observed for that county.
 
 ```{r fig-TS-high, fig.cap = "The three counties with the highest change have positive change or negative change during this entire time period.", output = T}
 high_time <- make_county_time_data(high_counties)
@@ -477,7 +489,12 @@ plot_county_time_series(
   "% Population Density Change Over Time:\nHighest-Change Counties"
 )
 ```
-
+**Takeaways**
+- Fairfield and Issaquena show the largest positive population-density changes over the time period.
+- Issaquena rises sharply near the end of the period, reaching close to 100% change.
+- Sevier is included among the highest-change counties because of large absolute change, but its trend is negative rather than positive.
+- The figure shows that “highest change” includes both large increases and large decreases when counties are selected using absolute change.
+- The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes.
 
 ```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population density change with both positive and negative changes.", output = T}
 average_time <- make_county_time_data(average_counties)
@@ -487,6 +504,8 @@ plot_county_time_series(
   "% Population Density Change Over Time:\nAverage-Change Counties"
 )
 ```
+**Takeaways**
+- These counties provide a useful comparison group for interpreting the more extreme counties.
 
 
 ```{r fig-TS-low, fig.cap = "The three counties with the lowest change have a notable drop into extreme negative population density change on February 9th.",  output = T}
@@ -498,7 +517,8 @@ plot_county_time_series(
 )
 
 ```
-
+**Takeaways**
+- I got nothing
 
 ## Places
 
@@ -527,6 +547,9 @@ county_flows |>
   )
 
 ```
+**Takeaways**
+- The table is more useful as a data-quality warning than as a substantive movement analysis.
+- Because movement vectors with small counts can be suppressed, these low-flow values should not be interpreted as exact zero movement.
 
 {{< pagebreak >}}
 
