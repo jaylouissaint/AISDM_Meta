@@ -346,7 +346,7 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 - **Time Windows**: aggregated over 3 fixed 8-hour time windows, beginning at 00:00, 08:00 and 16:00, that represent changes in population density
 
-- **Bing Tiles**: equivalent to roughly 2.4 kilometers on a side near the equator or the size of 6 x 6 city blocks (at Bing Tile level 14)
+- **Bing Tiles**: Bing tiles divide the map into a grid of smaller spatial units. Each tile is identified by tile coordinates and a quadkey, which uniquely identifies a tile at a specific level of detail [@microsoft_bing_tile_system]. In the Meta crisis datasets used here, Bing tile level 14 is roughly 2.4 kilometers on each side near the equator, or approximately the size of 6 by 6 city blocks.
 
 - **Administrative Regions**: the polygon boundaries for administrative regions derived from the Database of Global Administrative Areas, also known as GADM.
 
