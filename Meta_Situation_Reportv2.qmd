@@ -743,6 +743,10 @@ make_demographics_table <- function(file_name,
     )
   )
 }
+
+demographics_table_gt <- function(){
+  
+}
 ```
 
 
@@ -803,6 +807,83 @@ make_demographics_table(
   table_title = "Counties with Most Decreased Population Density on 2026-02-12"
   ) 
 ```
+
+{{< pagebreak >}}
+
+## Demographic Correlations
+
+```{r}
+# Read file from Outputs folder
+  df <- read_csv(
+    here("Outputs", "tk_facebook_pop_aggregated_bing.csv"),
+    show_col_types = FALSE
+  )
+  
+  # Convert date column
+  df <- df |>
+    mutate(ds := as.Date(ds))
+  # Summarize to county level
+  county_demo <- df |>
+    group_by(
+      county_geoid,
+      county_name,
+      county_state,
+      ds
+    ) |>
+    summarise(
+      mean_percent_change = mean(percent_change, na.rm = TRUE),
+      total_population = first(na.omit(total_population)),
+      median_income = first(na.omit(median_income)),
+      poverty_rate = first(na.omit(poverty_rate)),
+      pct_age_65_plus = first(na.omit(pct_age_65_plus)),
+      pct_no_vehicle = first(na.omit(pct_no_vehicle)),
+      .groups = "drop"
+    ) |>
+    mutate(
+      abs_change = abs(mean_percent_change)
+    )
+  
+  demo_table <- county_demo |>
+    select(
+      County = county_name,
+      State = county_state,
+      `Population Density Change` = mean_percent_change,
+      `Total Population` = total_population,
+      `Median Household Income` = median_income,
+      `Poverty Rate` = poverty_rate,
+      `% Age 65+` = pct_age_65_plus,
+      `% No Vehicle Access` = pct_no_vehicle,
+      Day = ds
+    ) |>
+    mutate(Day = Day - as.Date("2026-02-02"))
+```
+
+```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables.", fig.height=8, warning = F, output = T}
+# Variables to compare against Population Density Change
+vars <- c(
+  "Total Population",
+  "Median Household Income",
+  "Poverty Rate",
+  "% Age 65+",
+  "% No Vehicle Access"
+)
+
+# Create scatterplots
+plot_list <- lapply(vars, function(v) {
+  ggplot(demo_table, aes(
+    x = .data[[v]],
+    y = `Population Density Change`,
+    color = Day
+  )) +
+    geom_point(alpha = 0.6) +
+    theme_minimal()
+})
+
+plot_list[[6]] <- patchwork::plot_spacer()
+
+wrap_plots(plot_list, ncol = 2)
+```
+
 
 {{< pagebreak >}}
 
