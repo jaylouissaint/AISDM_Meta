@@ -347,7 +347,7 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 # Outside Data Added
 
-In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey [@acs]. This demographic data was incorporated with the use of the `tidycensus` package [@tidycensus]. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
+In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey in 2022 [@acs]. This demographic data was incorporated with the use of the `tidycensus` package [@tidycensus]. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
 
 The demographic data is joined using `county_geoid`, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
 
@@ -748,7 +748,7 @@ make_demographics_table <- function(file_name,
 
 ```{r, output = T}
 #| label: tbl-bing02-inc
-#| tbl-cap: "There are a few counties with high population density change but low total population."
+#| tbl-cap: "There are a few counties with high population density change but low total population. All demographic information comes from the American Community Survey in 2022."
 
 
 make_demographics_table(
@@ -762,7 +762,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing02-dec
-#| tbl-cap: "Most of the counties with the lowest population density change have fairly high vehicular access."
+#| tbl-cap: "Most of the counties with the lowest population density change have fairly high vehicular access. All demographic information comes from the American Community Survey in 2022."
 
 
 make_demographics_table(
@@ -777,7 +777,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing12-inc
-#| tbl-cap: "Issaquena has the highest population density but notably small population size."
+#| tbl-cap: "Issaquena has the highest population density but notably small population size. All demographic information comes from the American Community Survey in 2022."
 
 
 make_demographics_table(
@@ -791,7 +791,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing12-dec
-#| tbl-cap: "Similar to Feb 2nd, the counties with strong negative population density change also have high levels of vehicular access."
+#| tbl-cap: "Similar to Feb 2nd, the counties with strong negative population density change also have high levels of vehicular access. All demographic information comes from the American Community Survey in 2022."
 
 
 make_demographics_table(
