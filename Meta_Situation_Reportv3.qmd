@@ -316,7 +316,7 @@ The data is constructed by comparing what is observed during the crisis period t
 
 Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. These are two different approximations of the same general region and same time window, but they can show different rates of population density change ( @fig-bing-vs-admin).
 
-```{r fig-bing-vs-admin, fig.cap = "Changes in population density vary when represented by data from bing tiles or by data from administrative regions, even in the same region and time window.", output = T}
+```{r fig-bing-vs-admin, fig.cap = "Both maps display county-level summaries for the same region and time window. The bing tile data are aggregated up to counties using tile centroid locations, while the administrative-region data are already provided by Meta at an administrative boundary level.", output = T}
 bing_vs_admin_map(selected_date = "2026-02-12")
 ```
 **Takeaways** (@fig-bing-vs-admin)
