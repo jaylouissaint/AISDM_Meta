@@ -6,6 +6,8 @@ import streamlit as st
 from matplotlib.colors import TwoSlopeNorm
 from pathlib import Path
 import seaborn as sns
+import plotly.express as px
+import json
 
 # =========================
 # Streamlit page settings
@@ -173,6 +175,9 @@ def make_county_time_data(selected_county_names):
 # =========================
 # Map plotting function
 # =========================
+# =========================
+# Interactive map plotting
+# =========================
 def create_map(plot_date):
 
     latest_county = (
@@ -185,41 +190,51 @@ def create_map(plot_date):
         .rename(columns={value_col: "mean_percent_change"})
     )
 
-    map_data = counties_sf.merge(
+    # Keep only geometry from shapefile to avoid duplicate columns
+    counties_geometry = counties_sf[
+        ["county_geoid", "geometry"]
+    ]
+
+    map_data = counties_geometry.merge(
         latest_county,
         on="county_geoid",
         how="inner"
     )
 
-    # Relevant states only
-    relevant_states = states_sf[
-        states_sf.intersects(map_data.unary_union)
-    ]
+    # Convert GeoDataFrame to GeoJSON
+    geojson_data = json.loads(map_data.to_json())
 
-    fig, ax = plt.subplots(figsize=(10, 7))
-
-    map_data.plot(
-        column="mean_percent_change",
-        cmap="coolwarm",
-        linewidth=0.2,
-        edgecolor="none",
-        legend=True,
-        norm=norm,
-        ax=ax
+    fig = px.choropleth(
+        map_data,
+        geojson=geojson_data,
+        locations="county_geoid",
+        featureidkey="properties.county_geoid",
+        color="mean_percent_change",
+        color_continuous_scale="RdBu_r",
+        range_color=(fill_min, fill_max),
+        scope="usa",
+        hover_name="county_name",
+        hover_data={
+            "county_state": True,
+            "mean_percent_change": ":.2f",
+            "county_geoid": False
+        },
+        labels={
+            "county_state": "State",
+            "mean_percent_change": "% Change"
+        }
     )
 
-    relevant_states.boundary.plot(
-        ax=ax,
-        color="black",
-        linewidth=0.7
+    fig.update_geos(
+        fitbounds="locations",
+        visible=False
     )
 
-    ax.set_title(
-        pd.to_datetime(plot_date).strftime("%Y-%m-%d"),
-        fontsize=14
+    fig.update_layout(
+        title=pd.to_datetime(plot_date).strftime("%Y-%m-%d"),
+        margin={"r": 0, "t": 40, "l": 0, "b": 0},
+        height=700
     )
-
-    ax.axis("off")
 
     return fig
 
@@ -245,7 +260,10 @@ with tab_maps:
         fig = create_map(plot_date)
 
         with cols[idx]:
-            st.pyplot(fig)
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
 
 # =========================
 # County time series tab
