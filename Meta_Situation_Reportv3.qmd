@@ -677,15 +677,20 @@ make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
 tk_mp_data_bing <- read_csv(here("Outputs", "tk_movement_between_places_aggregated_bing.csv"),
                              show_col_types = F)
 county_flows <- tk_mp_data_bing |>
-  group_by(start_county_name, end_county_name) |>
+  mutate(start_county_name_acs = gsub(" County", "", start_county_name_acs),
+         end_county_name_acs = gsub(" County", "", end_county_name_acs)) |>
+  group_by(start_county_name_acs, end_county_name_acs) |>
   summarise(
     total_crisis_movement = sum(n_crisis, na.rm = TRUE),
-    avg_z_score = mean(z_score, na.rm = TRUE),
+    #avg_z_score = mean(z_score, na.rm = TRUE),
     .groups = "drop"
   ) |>
   arrange(total_crisis_movement)
 
 county_flows |>
+  rename(`Starting County` = start_county_name_acs,
+         `Ending County` = end_county_name_acs, 
+         `Total Crisis Movement` = total_crisis_movement) |>
   slice_head(n = 20) |>
   gt() |>
   tab_header(
