@@ -943,8 +943,8 @@ make_demographics_table(
     mutate(Day = Day - as.Date("2026-02-02"))
 ```
 
-```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables.", fig.height=8, warning = F, output = T}
-# Variables to compare against Population Density Change
+```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county. All demographic variables are already at the county level from the American Community Survey in 2022. Days are the 1st to 10th day of data collection, from Feb 2nd to Feb 12. These counties are from 15 Southern states.", fig.height=8, warning = F, output = T}
+
 vars <- c(
   "Total Population",
   "Median Household Income",
@@ -953,20 +953,49 @@ vars <- c(
   "% No Vehicle Access"
 )
 
-# Create scatterplots
+# Create scatterplots with correlation in title
 plot_list <- lapply(vars, function(v) {
+
+  # Calculate correlation
+  corr <- cor(
+    demo_table[[v]],
+    demo_table$`Population Density Change`,
+    use = "complete.obs"
+  )
+
   ggplot(demo_table, aes(
     x = .data[[v]],
     y = `Population Density Change`,
-    color = Day
+    fill = Day
   )) +
-    geom_point(alpha = 0.6) +
-    theme_minimal()
+    geom_point(
+      shape = 21,
+      size = 3,
+      alpha = 0.7,
+      color = "black"
+    ) +
+    scale_fill_gradient(
+      low = "orange",
+      high = "blue"
+    ) +
+    labs(
+      title = bquote(hat(rho) == .(round(corr, 2))),
+      x = v,
+      y = "Population Density Change"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom"
+    )
 })
 
 plot_list[[6]] <- patchwork::plot_spacer()
 
-wrap_plots(plot_list, ncol = 2)
+# Combine with shared legend
+wrap_plots(plot_list, ncol = 2, guides = "collect") &
+  theme(
+    legend.position = "bottom"
+  )
 ```
 
 
