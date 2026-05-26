@@ -837,7 +837,7 @@ demographics_table_gt <- function(){
 
 ```{r, output = T}
 #| label: tbl-bing02-inc
-#| tbl-cap: "There are a few counties with high population density change but low total population. All demographic information comes from the American Community Survey in 2022."
+#| tbl-cap: "There are a few counties with high population density change but low total population. All demographic information comes from the American Community Survey in 2022. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county."
 
 
 make_demographics_table(
@@ -851,7 +851,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing02-dec
-#| tbl-cap: "Most of the counties with the lowest population density change have fairly high vehicular access. All demographic information comes from the American Community Survey in 2022."
+#| tbl-cap: "Most of the counties with the lowest population density change have fairly high vehicular access. All demographic information comes from the American Community Survey in 2022. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county."
 
 
 make_demographics_table(
@@ -866,7 +866,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing12-inc
-#| tbl-cap: "Issaquena has the highest population density but notably small population size. All demographic information comes from the American Community Survey in 2022."
+#| tbl-cap: "Issaquena has the highest population density but notably small population size. All demographic information comes from the American Community Survey in 2022. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county."
 
 
 make_demographics_table(
@@ -880,7 +880,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing12-dec
-#| tbl-cap: "Similar to Feb 2nd, the counties with strong negative population density change also have high levels of vehicular access. All demographic information comes from the American Community Survey in 2022."
+#| tbl-cap: "Similar to Feb 2nd, the counties with strong negative population density change also have high levels of vehicular access. All demographic information comes from the American Community Survey in 2022. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county."
 
 
 make_demographics_table(
