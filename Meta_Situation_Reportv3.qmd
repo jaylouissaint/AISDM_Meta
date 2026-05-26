@@ -316,18 +316,6 @@ The Facebook data used in this report comes from Meta’s Data for Good crisis d
 
 The data is constructed by comparing what is observed during the crisis period to what was typical before the crisis. For example, population density during the storm is compared to a pre-crisis baseline. Movement during the storm is compared to normal movement patterns between the same places before the event. Business activity is compared to normal posting behavior from business pages before the crisis. Because the data is relative to a baseline, the main signal is not the raw count itself, but whether a place is above or below its expected level.
 
-Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. These are two different approximations of the same general region and same time window, but they can show different rates of population density change ( @fig-bing-vs-admin).
-
-```{r fig-bing-vs-admin, fig.cap = "Both maps display county-level summaries for the same region and time window. The bing tile data are aggregated up to counties using tile centroid locations, while the administrative-region data are already provided by Meta at an administrative boundary level.", output = T}
-bing_vs_admin_map(selected_date = "2026-02-12")
-```
-**Takeaways** (@fig-bing-vs-admin)
-
-- Bing tile results and administrative-region results should not be treated as interchangeable
-
-- The strongest changes appear concentrated in a small number of counties rather than spread evenly across the region
-
-- For example, on February 12th, the population density change for Issaquena, Mississippi is 59.7% based on Bing tiles and only -2% based on administrative regions.
 
 Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time. This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, the reported time windows are still based on Pacific Time, which should be kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
 
@@ -352,14 +340,6 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 - **Administrative Regions**: the polygon boundaries for administrative regions derived from the Database of Global Administrative Areas, also known as GADM.
 
-
-
-# Outside Data Added
-
-In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey in 2022 [@acs]. This demographic data was incorporated with the use of the `tidycensus` package [@tidycensus]. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
-
-The demographic data is joined using `county_geoid`, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
-
 # Aggregation Choices
 
 For the county-level maps, observations are summarized by county and date. When multiple Bing tile observations fall within the same county on the same day, this report represents the county using the average percent change. This is appropriate because percent change is already a relative measure; adding percentages across tiles would not produce an interpretable county-level value.
@@ -369,6 +349,29 @@ The aggregation method depends on the type of variable being summarized. For cou
 For movement data, origin and destination counties are kept separate. Each row represents movement from one starting location to one ending location, so the analysis preserves both `start_county_geoid` and `end_county_geoid`. This avoids collapsing directional movement into a single county and allows county-to-county movement patterns to be analyzed more accurately.
 
 Bing tile observations are assigned to counties using the latitude and longitude coordinates of each tile centroid. The documentation defines these coordinates as the centers of the Bing tile grid cells. These centroid points are spatially joined to county polygons to assign county names and GEOIDs. Quadkeys identify the original Bing tiles, but they are not used directly for county assignment in this report.
+
+
+Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. These are two different approximations of the same general region and same time window, but they can show different rates of population density change ( @fig-bing-vs-admin).
+
+```{r fig-bing-vs-admin, fig.cap = "Both maps display county-level summaries for the same region and time window. The bing tile data are aggregated up to counties using tile centroid locations, while the administrative-region data are already provided by Meta at an administrative boundary level.", output = T}
+bing_vs_admin_map(selected_date = "2026-02-12")
+```
+**Takeaways** (@fig-bing-vs-admin)
+
+- Bing tile results and administrative-region results should not be treated as interchangeable
+
+- The strongest changes appear concentrated in a small number of counties rather than spread evenly across the region
+
+- For example, on February 12th, the population density change for Issaquena, Mississippi is 59.7% based on Bing tiles and only -2% based on administrative regions.
+
+
+# Outside Data Added
+
+In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey in 2022 [@acs]. This demographic data was incorporated with the use of the `tidycensus` package [@tidycensus]. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
+
+The demographic data is joined using `county_geoid`, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
+
+
 
 # Limitations
 
