@@ -225,60 +225,94 @@ def create_map(plot_date):
 
 
 # =========================
-# Display maps
+# Tabs
 # =========================
-st.header(title_prefix)
-
-cols = st.columns(len(selected_dates))
-
-for idx, plot_date in enumerate(selected_dates):
-
-    fig = create_map(plot_date)
-
-    with cols[idx]:
-        st.pyplot(fig)
+tab_maps, tab_timeseries, tab_table = st.tabs(
+    ["Maps", "County Time Series", "Table"]
+)
 
 # =========================
-# County time series plots
+# Maps tab
 # =========================
-st.header("County Time Series")
+with tab_maps:
 
-time_data = make_county_time_data(selected_counties)
+    st.header(title_prefix)
 
-if not time_data.empty:
+    cols = st.columns(len(selected_dates))
 
-    fig_ts, ax = plt.subplots(figsize=(12, 6))
+    for idx, plot_date in enumerate(selected_dates):
 
-    sns.lineplot(
-        data=time_data,
-        x="ds",
-        y="mean_percent_change",
-        hue="county_name",
-        marker="o",
-        ax=ax
+        fig = create_map(plot_date)
+
+        with cols[idx]:
+            st.pyplot(fig)
+
+# =========================
+# County time series tab
+# =========================
+with tab_timeseries:
+
+    st.header("County Time Series")
+
+    time_data = make_county_time_data(selected_counties)
+
+    if not time_data.empty:
+
+        fig_ts, ax = plt.subplots(figsize=(12, 6))
+
+        sns.lineplot(
+            data=time_data,
+            x="ds",
+            y="mean_percent_change",
+            hue="county_name",
+            marker="o",
+            ax=ax
+        )
+
+        ax.axhline(
+            y=0,
+            color="black",
+            linewidth=0.5,
+            linestyle="--"
+        )
+
+        ax.set_title("County Percent Change Over Time")
+
+        ax.set_xlabel("")
+        ax.set_ylabel("% Change vs Baseline")
+
+        plt.xticks(rotation=45)
+
+        st.pyplot(fig_ts)
+
+    else:
+        st.warning("No county data available.")
+
+# =========================
+# Table tab
+# =========================
+with tab_table:
+
+    st.header("Data Table")
+
+    table_df = df[df[date_col].isin(selected_dates)].copy()
+
+    # Filter counties only if selected
+    if len(selected_counties) > 0:
+        table_df = table_df[
+            table_df["county_name"].isin(selected_counties)
+        ]
+
+    # Optional sorting
+    table_df = table_df.sort_values(
+        by=[date_col, "county_state", "county_name"]
     )
 
-    ax.axhline(
-        y=0,
-        color="black",
-        linewidth=0.5,
-        linestyle="--"
+    st.dataframe(
+        table_df,
+        use_container_width=True
     )
 
-    ax.set_title("County Percent Change Over Time")
-
-    ax.set_xlabel("")
-    ax.set_ylabel("% Change vs Baseline")
-
-    plt.xticks(rotation=45)
-
-    st.pyplot(fig_ts)
-
-else:
-    st.warning("No county data available.")
-
-# =========================
-# Optional data preview
-# =========================
-with st.expander("Preview Data"):
-    st.dataframe(df.head())
+    st.caption(
+        f"{len(table_df):,} rows displayed"
+    )
