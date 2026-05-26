@@ -439,6 +439,57 @@ make_percent_change_map(
   
 ## Time Series of Movement
 
+```{r}
+make_mini_map <- function(file_name,
+                                    counties,
+                                    output_plot_name = NULL,
+                                    title_prefix = "") {
+  
+  # Read file
+  df <- read_csv(
+    here("outputs", file_name),
+    show_col_types = FALSE
+  )
+  
+ # Compute global fill range using the summarized county-level data
+  counties_df <- df |>
+    mutate(color_county = ifelse(county_name_acs %in% counties,
+                                 county_name_acs, NA)) |>
+    select(county_geoid, county_name, county_state, color_county) |>
+    unique()
+  
+  # Function to create a single map
+  create_map <- function() {
+    map_data <- counties_sf |>
+      inner_join(counties_df, by = "county_geoid")
+    
+    county_bbox <- st_bbox(map_data)
+    relevant_states <- states_sf |>
+      st_filter(map_data, .predicate = st_intersects)
+    
+    ggplot() +
+      geom_sf(data = map_data, aes(fill = color_county), 
+              show.legend = FALSE, 
+              linewidth = 0.2) +
+      geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7)+
+      scale_fill_discrete(
+        na.value = "white"
+      ) + 
+      labs(
+        fill = "% Change vs Baseline"
+      ) +
+      coord_sf(
+        xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
+        ylim = c(county_bbox["ymin"], county_bbox["ymax"])
+      ) +
+      theme_minimal()
+  }
+  
+  create_map()
+}
+```
+
+
 
 ```{r}
 tk_fb_data_bing <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F) |>
@@ -447,7 +498,7 @@ tk_fb_data_bing <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv
 # Have to decide between median and mean
 county_change_summary <- tk_fb_data_bing |>
   mutate(ds = as.Date(ds)) |>
-  group_by(county_geoid, county_name) |>
+  group_by(county_geoid, county_name, county_name_acs) |>
   summarise(
     avg_abs_change = mean(abs(percent_change), na.rm = TRUE),
     max_abs_change = max(abs(percent_change), na.rm = TRUE),
@@ -540,6 +591,13 @@ plot_county_time_series(
   "% Population Density Change Over Time:\nHighest-Change Counties"
 )
 ```
+
+```{r, output = T, fig.height = 3}
+make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
+              counties = high_counties$county_name_acs)
+```
+
+
 **Takeaways** (@fig-TS-high)
 
 - Fairfield and Issaquena show the largest positive population-density changes over the time period.
@@ -562,6 +620,12 @@ plot_county_time_series(
   "% Population Density Change Over Time:\nAverage-Change Counties"
 )
 ```
+
+```{r, output = T, fig.height = 3}
+make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
+              counties = average_counties$county_name_acs)
+```
+
 **Takeaways** (@fig-TS-medium)
 
 - These counties provide a useful comparison group for interpreting the more extreme counties.
@@ -583,8 +647,13 @@ plot_county_time_series(
   low_time,
   "% Population Density Change Over Time:\nLowest-Change Counties"
 )
-
 ```
+
+```{r, output = T, fig.height = 3}
+make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
+              counties = low_counties$county_name_acs)
+```
+
 **Takeaways** (@fig-TS-low)
 
 - These three counties follow a similar pattern with relatively stable populations around zero and a sharp drop at February 9th.
