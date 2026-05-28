@@ -887,34 +887,18 @@ make_demographics_table(
   )
   
   # Convert date column
-  df <- df |>
-    mutate(ds := as.Date(ds))
-  # Summarize to county level
   county_demo <- df |>
-    group_by(
-      county_geoid,
-      county_name,
-      county_state,
-      ds
-    ) |>
-    summarise(
-      mean_percent_change = mean(percent_change, na.rm = TRUE),
-      total_population = first(na.omit(total_population)),
-      median_income = first(na.omit(median_income)),
-      poverty_rate = first(na.omit(poverty_rate)),
-      pct_age_65_plus = first(na.omit(pct_age_65_plus)),
-      pct_no_vehicle = first(na.omit(pct_no_vehicle)),
-      .groups = "drop"
-    ) |>
-    mutate(
-      abs_change = abs(mean_percent_change)
-    )
+    mutate(ds = as.POSIXct(
+          paste(ds, hour),
+          format = "%Y-%m-%d %H%M",
+          tz = "America/Los_Angeles"
+        ))
   
   demo_table <- county_demo |>
     select(
       County = county_name,
       State = county_state,
-      `Population Density Change` = mean_percent_change,
+      `Population Density Change` = percent_change,
       `Total Population` = total_population,
       `Median Household Income` = median_income,
       `Poverty Rate` = poverty_rate,
@@ -922,10 +906,13 @@ make_demographics_table(
       `% No Vehicle Access` = pct_no_vehicle,
       Day = ds
     ) |>
-    mutate(Day = Day - as.Date("2026-02-02"))
+    mutate(Day = Day - as.POSIXct("2026-02-02 0000",
+          format = "%Y-%m-%d %H%M",
+          tz = "America/Los_Angeles"),
+          Day = Day/86400)
 ```
 
-```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county. All demographic variables are already at the county level from the American Community Survey in 2022. Days are the 1st to 10th day of data collection, from Feb 2nd to Feb 12. These counties are from 15 Southern states.", fig.height=8, warning = F, output = T}
+```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables. Population density change is the percent change in Facebook Location Services-enabled user population counts per Bing tile in each county at 8-hour intervals. All demographic variables are already at the county level from the American Community Survey in 2022. Days are the 1st to 10th day of data collection, from Feb 2nd to Feb 12. These counties are from 15 Southern states.", fig.height=8, warning = F, output = T}
 
 vars <- c(
   "Total Population",
@@ -953,7 +940,7 @@ plot_list <- lapply(vars, function(v) {
     geom_point(
       shape = 21,
       size = 3,
-      alpha = 0.7,
+      alpha = 0.1,
       color = "black"
     ) +
     scale_fill_gradient(
