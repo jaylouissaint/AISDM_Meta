@@ -388,7 +388,7 @@ bing_vs_admin_map(selected_date = "2026-02-12",
 
 - The strongest changes appear concentrated in a small number of counties rather than spread evenly across the region
 
-- For example, on February 12th, the population density change for Issaquena, Mississippi is 59.7% based on Bing tiles and only -2% based on administrative regions.
+- For example, on February 12th 4pm PST, the population density change for Issaquena, Mississippi is 21.29% based on Bing tiles and only -10.55% based on administrative regions.
 
 
 # Outside Data Added
@@ -430,42 +430,38 @@ make_percent_change_map(
 
 - The overall spatial pattern appears fairly stable between the two dates
 
-- There is little visible negative population-density change in the Bing tile version
+- There is little visible negative population-density change.
 
 - On February 2nd, the counties with the most increased population density are (@tbl-bing02-inc):
 
-  - Fairfield, South Carolina (30.5%)
+  - Fairfield, South Carolina (63.1%)
   
-  - Issaquena, Mississippi (25.5%)
+  - Perry, Alabama (56.6%)
   
-  - Grenada, Mississippi (17.9%)
+  - Hampton, South Carolina (37.5%)
 
 - On February 2nd, the counties with the most decreased population density are (@tbl-bing02-dec):
-  - Sevier, Tennessee (-12.5%)
+  - Sevier, Tennessee (-23.3%)
   
-  - Carroll, Ohio (-9.6%)
+  - Carroll, Ohio (-13.9%)
   
-  - Jefferson, Arkansas (-8.9%)
+  - Swain, North Carolina (-11.0%)
 
 - On February 12th, the counties with the most increased population density are (@tbl-bing12-inc):
 
-  - Issaquena, Mississippi (59.7%)
+  - Monroe, Ohio (197.4%)
   
-  - Fairfield, South Carolina (45.2%)
+  - Fairfield, South Carolina (69.3%)
   
-  - Osage, Missouri (12.6%)
+  - Issaquena, Mississippi (30.2%)
   
-  - Perry, Alabama (12.6%)
-
 - On February 12th, the counties with the most decreased population density are (@tbl-bing12-dec):
 
-  - Sevier, Tenneessee (-19.6%)
+  - Sevier, Tenneessee (-22.7%)
   
-  - Laurens, Georgia (-15.6%)
+  - Carroll, Ohio (-21.7%)
   
-  - Fannin, Georgia (-13.8%)
-  
-  - Alleghany, North Carolina (-13.8%)
+  - Alleghany, North Carolina (-20.3%)
   
 ## Time Series of Movement
 
@@ -591,7 +587,7 @@ The counties are grouped by average absolute population-density change over the 
 
 [^avg-change]: The percent changes are summarized over the full recording period for each county. For each county, the absolute value of the percent change is taken at each time point, and those absolute changes are averaged across the 14-day period. This creates a single measure of how much each county deviated from baseline, regardless of whether the change was positive or negative. Counties are then compared using this average absolute change to identify the highest-change, lowest-change, and average-change counties. The county-level change measure is defined as $\text{AvgAbsChange}_i = \frac{1}{T_i}\sum_{t=1}^{T_i} |p_{it}|$, where $p_{it}$ is the percent change for county $i$ at time $t$, and $T_i$ is the number of time periods observed for that county.
 
-```{r fig-TS-high, fig.cap = "The three counties with the highest change have positive change or negative change during this entire time period.", output = T}
+```{r fig-TS-high, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population density. The time period is February 2nd to February 13th at 8hr intervals at 12am PST, 8am PST, and 4pm PST.", output = T}
 high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series(
@@ -608,17 +604,13 @@ make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
 
 **Takeaways** (@fig-TS-high)
 
-- Fairfield and Issaquena show the largest positive population-density changes over the time period.
+- The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes, but each county has starkly different patterns of population density change.
 
-- Issaquena rises sharply near the end of the period, reaching close to 100% change.
+- Monroe has very strong positive population density throughout this entire time period, which is at least double the population density rates of the other two counties.
 
-- Sevier is included among the highest-change counties because of large absolute change, but its trend is negative rather than positive.
+- Fairfield maintains strong positive population density change throughout this time period.
 
-- The figure shows that “highest change” includes both large increases and large decreases when counties are selected using absolute change.
-
-- The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes.
-
-- Both Fairfield and Issaquena almost constantly have population density change over 25%.
+- Issaquena tends to have peaks around the 8am PST time, which is 10am local time.
 
 ```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population density change with both positive and negative changes.", output = T}
 average_time <- make_county_time_data(average_counties)
@@ -638,15 +630,13 @@ make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
 
 - These counties provide a useful comparison group for interpreting the more extreme counties.
 
-- In comparison to the high-change counties, these three counties have their percentage population density change constrained within [-4%, 4%], indicating much lower rates of population density change.
+- In comparison to the high-change counties, these three counties have their percentage population density change constrained within [-10%, 10%], indicating much lower rates of population density change.
 
-- All counties have a drop in population density change at February 9th but with varying magnitudes.
+- All counties have a drop in population density change at February 9th of similar magnitudes.
 
-- The Grayson county has a somewhat monotonic decline with people initially coming in and then steadily moving out.
+- Fayette and Ohio follow similar trends in variation, but Ohio, Kentucky has a noticable spike on February 8th.
 
-- The Rowan county has constantly positive population density change, indicating incoming population, with a sharp drop on February 9th.
-
-- The Montogomery has constantly negative population density, indicating leaving populations, with a sharp spike at February 7th and a sharp drop at February 9th.
+- Union is the only county of these three that has negative population density rates in this time periods.
 
 ```{r fig-TS-low, fig.cap = "The three counties with the lowest change have a notable drop into extreme negative population density change on February 9th.",  output = T}
 low_time <- make_county_time_data(low_counties)
@@ -665,10 +655,6 @@ make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
 **Takeaways** (@fig-TS-low)
 
 - These three counties follow a similar pattern with relatively stable populations around zero and a sharp drop at February 9th.
-
-- Cobb and DeKalb follow this pattern very closely and very similarly.
-
-- The Peach county has more variation with spikes at February 7th, February 9th and February 11th.
 
 - These counties never have strong positive population density change, implying that populations may have either entered before this time period or left after this time period, because the constant negative change indicates people leaving these counties.
 
