@@ -343,17 +343,27 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 - **Percent change**: Percent change in population counts of Facebook app users who have turned on the Location Services device setting on their mobile device and are along the vector defined by the starting bing tile and ending bing tile, calculated by dividing the difference by the baseline (n_baseline) (plus a small value, usually 1).
 
 # Aggregation Choices
+## Imputation and County-Level Percent Change
 
-For the county-level maps, observations are summarized by county and date. When multiple Bing tile observations fall within the same county on the same day, this report represents the county using the average percent change. This is appropriate because percent change is already a relative measure; adding percentages across tiles would not produce an interpretable county-level value.
+For the county-level analysis, this report does not use the original tile-level `percent_change` field as the final county-level measure. Instead, the original `percent_change` column is preserved as `given_percent_change`, and a new county-level `percent_change` is calculated from the underlying baseline and crisis counts.
 
-The aggregation method depends on the type of variable being summarized. For count variables, such as baseline population or crisis population, summing can be useful when the goal is to estimate the total number of observed Facebook users across tiles or regions. For relative variables, such as percent change, z-scores, and ratios, averaging is more appropriate because these measures already describe change relative to a baseline.
+Some rows have missing values for `n_baseline` or `n_crisis` because of Meta’s privacy protections around small counts. To avoid dropping these rows entirely, missing `n_baseline` values are imputed as 3 and missing `n_crisis` values are imputed as 9.
+
+After imputation, observations are summarized by county and reporting window. Because the data may include multiple observations within a single day, the reporting window is defined using both the date and the time-window information available in the data. For each county-window pair, the baseline counts are summed across all Bing tile observations in that county and reporting window, and the crisis counts are summed across those same observations. The county-window percent change is then calculated as:
+
+$\text{PercentChange}_{cw} = \frac{n_{\text{crisis},cw} - n_{\text{baseline},cw}}{n_{\text{baseline},cw} + 1} \times 100$
+
+where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the logic in the Meta documentation and prevents division by very small baseline values.
+
+This means the maps and tables  represent county-level population density change based on aggregated counts. 
+
+*The aggregation method depends on the type of variable being summarized. For count variables, such as `n_baseline` and `n_crisis`, summing is appropriate because the goal is to estimate the total observed Facebook users across tiles within a county. For relative variables, such as `given_percent_change`, or ratios, averaging can still be useful for descriptive comparisons, but these are not used as the main county-level percent change measure in this report.*
 
 For movement data, origin and destination counties are kept separate. Each row represents movement from one starting location to one ending location, so the analysis preserves both `start_county_geoid` and `end_county_geoid`. This avoids collapsing directional movement into a single county and allows county-to-county movement patterns to be analyzed more accurately.
 
 Bing tile observations are assigned to counties using the latitude and longitude coordinates of each tile centroid. The documentation defines these coordinates as the centers of the Bing tile grid cells. These centroid points are spatially joined to county polygons to assign county names and GEOIDs. Quadkeys identify the original Bing tiles, but they are not used directly for county assignment in this report.
 
-
-Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. These are two different approximations of the same general region and same time window, but they can show different rates of population density change ( @fig-bing-vs-admin).
+Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. These are two different approximations of the same general region and same time window, but they can show different rates of population density change (@fig-bing-vs-admin).
 
 ```{r fig-bing-vs-admin, fig.cap = "Both maps display county-level summaries for the same region and time window. The bing tile data are aggregated up to counties using tile centroid locations, while the administrative-region data are already provided by Meta at an administrative boundary level.", output = T}
 bing_vs_admin_map(selected_date = "2026-02-12")
@@ -365,13 +375,6 @@ bing_vs_admin_map(selected_date = "2026-02-12")
 - The strongest changes appear concentrated in a small number of counties rather than spread evenly across the region
 
 - For example, on February 12th, the population density change for Issaquena, Mississippi is 59.7% based on Bing tiles and only -2% based on administrative regions.
-
-## Imputation Choices **WIP**
-The new county-level formula is:
-
-$\text{PercentChange}_{ct} = \frac{n_{\text{crisis},ct} - n_{\text{baseline},ct}}{n_{\text{baseline},ct} + 1} \times 100$
-where c is county and t is date.
-
 
 
 # Outside Data Added
