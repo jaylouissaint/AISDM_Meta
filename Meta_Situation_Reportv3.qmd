@@ -332,7 +332,7 @@ The data is constructed by comparing what is observed during the crisis period t
 
 Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time. This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, the reported time windows are still based on Pacific Time, which should be kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
 
-Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. **For the rest of this report, we use the Bing tile version as the primary aggregation source because Bing tiles are strictly defined grid cells with clear latitude and longitude coordinates.** This makes the spatial assignment process more transparent and reproducible. In contrast, the administrative-region datasets are aggregated using boundaries provided to Meta by GADM. Because we do not have direct access to the exact GADM polygons used by Meta for this aggregation, it is harder to verify or reproduce the administrative-region boundaries precisely.
+Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. **For the rest of this report, we use the Bing tile version as the primary aggregation source because Bing tiles are strictly defined grid cells with clear latitude and longitude coordinates.** This makes the spatial assignment process more transparent and reproducible. In contrast, the administrative-region datasets are aggregated using boundaries provided to Meta by [GADM](https://gadm.org). Because we do not have direct access to the exact GADM polygons used by Meta for this aggregation, it is harder to verify or reproduce the administrative-region boundaries precisely.
 
 When the data is provided as Bing tiles, each observation is tied to a grid cell with a latitude and longitude. When we add county information to those data, we are not changing the original measurement. Instead, we assign each tile or point to the county that contains it. This allows the tile-level data to be summarized at the county level while preserving a clear record of how the geographic aggregation was performed.
 
@@ -351,7 +351,7 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 - **Bing Tiles**: Bing tiles divide the map into a grid of smaller spatial units. Each tile is identified by tile coordinates and a quadkey, which uniquely identifies a tile at a specific level of detail [@microsoft_bing_tile_system]. In the Meta crisis datasets used here, Bing tile level 14 is roughly 2.4 kilometers on each side near the equator, or approximately the size of 6 by 6 city blocks.
 
-- **Administrative Regions**: the polygon boundaries for administrative regions derived from the Database of Global Administrative Areas, also known as GADM.
+- **Administrative Regions**: the polygon boundaries for administrative regions derived from the [Database of Global Administrative Areas](https://gadm.org), also known as GADM [@gadm].
 
 - **Percent change**: Percent change in population counts of Facebook app users who have turned on the Location Services device setting on their mobile device and are along the vector defined by the starting bing tile and ending bing tile, calculated by dividing the difference by the baseline (n_baseline) (plus a small value, usually 1).
 
