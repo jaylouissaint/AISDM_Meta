@@ -676,11 +676,9 @@ make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
 
 ## Places
 
-
-
 ```{r, output = T}
 #| label: tbl-summary-table
-#| tbl-cap: "The bottom 20 county-to-county crisis movement flows are all at zero or ten, likely due to data-collection thresholds for privacy concerns."
+#| tbl-cap: "The bottom 20 county-to-county crisis movement flows are all at zero or ten, likely due to data-collection thresholds for privacy concerns. Total crisis movement is the total (non-negative) number of people who have turned on the Location Services device setting on their mobile device for a given starting and ending county."
 
 tk_mp_data_bing <- read_csv(here("Outputs", "tk_movement_between_places_aggregated_bing.csv"),
                              show_col_types = F)
