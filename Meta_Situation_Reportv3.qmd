@@ -340,6 +340,8 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 - **Administrative Regions**: the polygon boundaries for administrative regions derived from the Database of Global Administrative Areas, also known as GADM.
 
+- **Percent change**: Percent change in population counts of Facebook app users who have turned on the Location Services device setting on their mobile device and are along the vector defined by the starting bing tile and ending bing tile, calculated by dividing the difference by the baseline (n_baseline) (plus a small value, usually 1).
+
 # Aggregation Choices
 
 For the county-level maps, observations are summarized by county and date. When multiple Bing tile observations fall within the same county on the same day, this report represents the county using the average percent change. This is appropriate because percent change is already a relative measure; adding percentages across tiles would not produce an interpretable county-level value.
@@ -363,6 +365,13 @@ bing_vs_admin_map(selected_date = "2026-02-12")
 - The strongest changes appear concentrated in a small number of counties rather than spread evenly across the region
 
 - For example, on February 12th, the population density change for Issaquena, Mississippi is 59.7% based on Bing tiles and only -2% based on administrative regions.
+
+## Imputation Choices **WIP**
+The new county-level formula is:
+
+$\text{PercentChange}_{ct} = \frac{n_{\text{crisis},ct} - n_{\text{baseline},ct}}{n_{\text{baseline},ct} + 1} \times 100$
+where c is county and t is date.
+
 
 
 # Outside Data Added

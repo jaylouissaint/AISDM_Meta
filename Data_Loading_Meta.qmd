@@ -14,6 +14,114 @@ format:
 
 # FUNCTIONS
 
+## Imputation
+```{r}
+# Convert possible "\N" values to proper numeric NA values
+clean_numeric <- function(x) {
+  suppressWarnings(as.numeric(na_if(as.character(x), "\\N")))
+}
+
+# Impute missing n_baseline and n_crisis values
+impute_count_values <- function(df,
+                                baseline_impute_value = 3,
+                                crisis_impute_value = 9) {
+  
+  # Only run this function if the needed columns exist
+  required_cols <- c("n_baseline", "n_crisis")
+  
+  if (!all(required_cols %in% names(df))) {
+    stop("n_baseline and n_crisis must both exist before imputation.")
+  }
+  
+  # Rename Meta's original percent_change so we preserve it
+  if ("percent_change" %in% names(df) && !"given_percent_change" %in% names(df)) {
+    df <- df |>
+      rename(given_percent_change = percent_change)
+  }
+  
+  df |>
+    mutate(
+      # Clean count columns in case they were read as characters
+      n_baseline = clean_numeric(n_baseline),
+      n_crisis = clean_numeric(n_crisis),
+      
+      # Binary indicators: 1 means the value was imputed
+      # L means treat this number as an integer
+      n_baseline_imputed = if_else(is.na(n_baseline), 1L, 0L),
+      n_crisis_imputed = if_else(is.na(n_crisis), 1L, 0L),
+      
+      # Store the amount contributed by imputation
+      n_baseline_imputed_amount = if_else(n_baseline_imputed == 1L, baseline_impute_value, 0),
+      n_crisis_imputed_amount = if_else(n_crisis_imputed == 1L, crisis_impute_value, 0),
+      
+      # Impute missing values
+      n_baseline = if_else(is.na(n_baseline), baseline_impute_value, n_baseline),
+      n_crisis = if_else(is.na(n_crisis), crisis_impute_value, n_crisis)
+    )
+}
+
+# Calculate county-level percent change from summed n_baseline and n_crisis
+calculate_county_percent_change <- function(df,
+                                            group_cols = c("county_geoid", "county_name", "county_state", "ds"),
+                                            small_value = 1) {
+  
+  required_cols <- c(group_cols, "n_baseline", "n_crisis",
+                     "n_baseline_imputed", "n_crisis_imputed",
+                     "n_baseline_imputed_amount", "n_crisis_imputed_amount")
+  
+  missing_cols <- setdiff(required_cols, names(df))
+  
+  if (length(missing_cols) > 0) {
+    stop("Missing required columns for county-level percent change: ",
+         paste(missing_cols, collapse = ", "))
+  }
+  
+  df |>
+    group_by(across(all_of(group_cols))) |>
+    summarise(
+      # Sum counts to the county-date level
+      n_baseline = sum(n_baseline, na.rm = TRUE),
+      n_crisis = sum(n_crisis, na.rm = TRUE),
+      
+      # Difference in imputed crisis and baseline counts
+      n_difference = n_crisis - n_baseline,
+      
+      # Keep a summary of Meta's original percent_change for comparison
+      given_percent_change = if ("given_percent_change" %in% names(df)) {
+        mean(given_percent_change, na.rm = TRUE)
+      } else {
+        NA_real_
+      },
+      
+      # Binary county-level flags: 1 if any row in the county-date group was imputed
+      n_baseline_imputed = as.integer(any(n_baseline_imputed == 1L, na.rm = TRUE)),
+      n_crisis_imputed = as.integer(any(n_crisis_imputed == 1L, na.rm = TRUE)),
+      
+      # Number of rows imputed
+      n_baseline_imputed_rows = sum(n_baseline_imputed, na.rm = TRUE),
+      n_crisis_imputed_rows = sum(n_crisis_imputed, na.rm = TRUE),
+      
+      # Total amount of the county counts that came from imputation
+      n_baseline_imputed_amount = sum(n_baseline_imputed_amount, na.rm = TRUE),
+      n_crisis_imputed_amount = sum(n_crisis_imputed_amount, na.rm = TRUE),
+      
+      # Share of total county counts that came from imputation
+      pct_n_baseline_imputed = n_baseline_imputed_amount / n_baseline,
+      pct_n_crisis_imputed = n_crisis_imputed_amount / n_crisis,
+      
+      # Number of original rows aggregated into this county-date row
+      n_rows_aggregated = n(),
+      
+      .groups = "drop"
+    ) |>
+    mutate(
+      # New county-level percent change
+      percent_change = ((n_crisis - n_baseline) / (n_baseline + small_value)) * 100
+    )
+}
+```
+
+
 ## Latitude and Longitude
 
 ```{r}
@@ -70,45 +178,42 @@ aggregate_csvs <- function(path_parts,
                            dedupe = TRUE,
                            lat_col = NULL,
                            lon_col = NULL,
-                           prefix = "") {
+                           prefix = "",
+                           impute_counts = FALSE,
+                           calculate_county_change = FALSE,
+                           county_group_cols = c("county_geoid", "county_name", "county_state", "ds")) {
   
   data_dir <- do.call(here::here, as.list(path_parts))
   
   cat("Reading from:", data_dir, "\n")
   
-  # Stop execution if the directory does not exist
   if (!dir.exists(data_dir)) {
     stop("Directory does not exist: ", data_dir)
   }
   
-  # Get all CSV files in the directory
   csv_files <- list.files(
     path = data_dir,
     pattern = "\\.csv$",
     full.names = TRUE
   )
   
-  # Stop if no CSV files are found
   if (length(csv_files) == 0) {
     stop("No CSV files found in: ", data_dir)
   }
   
   cat("Found", length(csv_files), "files\n")
   
-  # Read each CSV file and add a column indicating its source file
-  # Then combine all files into a single dataframe
   combined_data <- lapply(csv_files, function(f) {
     read_csv(f, show_col_types = FALSE) |>
       mutate(source_file = basename(f))
   }) |>
     bind_rows()
   
-  # Remove exact duplicate rows
   if (dedupe) {
     combined_data <- combined_data |> distinct()
   }
   
-  # If latitude and longitude columns are provided, assign each row to a county using spatial join
+  # Add counties from lat/lon if provided
   if (!is.null(lat_col) && !is.null(lon_col)) {
     cat("Adding county identifiers...\n")
     
@@ -116,36 +221,47 @@ aggregate_csvs <- function(path_parts,
       df = combined_data,
       lat_col = lat_col,
       lon_col = lon_col,
-      prefix = prefix   # allows naming like start_county_*, end_county_*
+      prefix = prefix
     )
   }
   
-  # Extract date and time from file names for data sets that don't contain them
+  # Extract date and time from file names
   combined_data <- combined_data |>
-  mutate(
-    ds = as.Date(sub(".*_(\\d{4}-\\d{2}-\\d{2})_.*", "\\1", source_file)),
-    hour = sub(".*_(\\d{4}-\\d{2}-\\d{2})_(\\d{4}).*", "\\2", source_file)
-  )
+    mutate(
+      ds = as.Date(sub(".*_(\\d{4}-\\d{2}-\\d{2})_.*", "\\1", source_file)),
+      hour = sub(".*_(\\d{4}-\\d{2}-\\d{2})_(\\d{4}).*", "\\2", source_file)
+    )
   
-  # Define output directory at the project root (Outputs/)
+  # Impute count columns if requested
+  if (impute_counts) {
+    cat("Imputing n_baseline and n_crisis...\n")
+    
+    combined_data <- impute_count_values(combined_data)
+  }
+  
+  # Aggregate to county-date level and calculate new percent_change if requested
+  if (calculate_county_change) {
+    cat("Calculating county-level percent_change from n_baseline and n_crisis...\n")
+    
+    combined_data <- calculate_county_percent_change(
+      df = combined_data,
+      group_cols = county_group_cols
+    )
+  }
+  
   output_dir <- here::here("Outputs")
   
-  # Create the directory if it doesn't already exist
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
   }
   
-  # Build full output file path
   output_file <- file.path(output_dir, output_name)
   
-  # Write the combined dataset to CSV
   write_csv(combined_data, output_file)
   
-  # Print basic logging info
   cat("Saved to:", output_file, "\n")
   cat("Rows:", nrow(combined_data), "\n")
   
-  # Return the final dataframe to the environment
   return(combined_data)
 }
 ```
@@ -411,7 +527,10 @@ tk_fb_data_admin <- aggregate_csvs(
   output_name = "tk_facebook_pop_aggregated_admin.csv",
   lat_col = "latitude",
   lon_col = "longitude",
-  prefix = ""
+  prefix = "",
+  impute_counts = TRUE,
+  calculate_county_change = TRUE,
+  county_group_cols = c("county_geoid", "county_name", "county_state", "ds")
 )
 
 tk_fb_data_admin <- add_demographics(
@@ -431,7 +550,10 @@ tk_fb_data_bing <- aggregate_csvs(
   output_name = "tk_facebook_pop_aggregated_bing.csv",
   lat_col = "latitude",
   lon_col = "longitude",
-  prefix = ""
+  prefix = "",
+  impute_counts = TRUE,
+  calculate_county_change = TRUE,
+  county_group_cols = c("county_geoid", "county_name", "county_state", "ds")
 )
 
 tk_fb_data_bing <- add_demographics(
