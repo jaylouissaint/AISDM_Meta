@@ -68,7 +68,8 @@ library(scales)     # For squish
 make_percent_change_map <- function(file_name,
                                     date_col = "ds",
                                     value_col = "percent_change",
-                                    selected_date = NULL,   # Can be length 1 or 2
+                                    selected_date = NULL,
+                                    selected_hour = NULL,
                                     output_plot_name = NULL,
                                     title_prefix = "Population Density Change (%)") {
   
@@ -90,23 +91,16 @@ make_percent_change_map <- function(file_name,
   
  # Compute global fill range using the summarized county-level data
   all_summarized <- df |>
-    filter(.data[[date_col]] %in% plot_dates) |>
-    group_by(county_geoid, county_name, county_state, !!sym(date_col)) |>
-    summarise(mean_percent_change = mean(.data[[value_col]], na.rm = TRUE), .groups = "drop")
+    filter(paste(.data[[date_col]], hour) %in% paste(plot_dates, selected_hour))
   
   fill_range <- all_summarized |>
-    summarise(min_val = min(mean_percent_change, na.rm = TRUE),
-              max_val = max(mean_percent_change, na.rm = TRUE))
+    summarise(min_val = min(percent_change, na.rm = TRUE),
+              max_val = max(percent_change, na.rm = TRUE))
   
   # Function to create a single map
-  create_map <- function(plot_date) {
+  create_map <- function(plot_date_time) {
     latest_county <- df |>
-      filter(.data[[date_col]] == plot_date) |>
-      group_by(county_geoid, county_name, county_state) |>
-      summarise(
-        mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
-        .groups = "drop"
-      )
+      filter(paste(.data[[date_col]], hour) %in% plot_date_time)
     
     map_data <- counties_sf |>
       inner_join(latest_county, by = "county_geoid")
@@ -115,8 +109,12 @@ make_percent_change_map <- function(file_name,
     relevant_states <- states_sf |>
       st_filter(map_data, .predicate = st_intersects)
     
+    plot_date <- gsub("0000", "12am PST",plot_date_time)
+    plot_date <- gsub("0800", "8am PST",plot_date)
+    plot_date <- gsub("1600", "4pm PST",plot_date)
+    
     ggplot() +
-      geom_sf(data = map_data, aes(fill = mean_percent_change), linewidth = 0.2) +
+      geom_sf(data = map_data, aes(fill = percent_change), linewidth = 0.2) +
       geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +
       scale_fill_gradientn(
           colours = c("red", "white", "blue"),
@@ -139,9 +137,10 @@ make_percent_change_map <- function(file_name,
       ) +
       theme_minimal()
   }
-  
+
   # Create plots
-  plots <- lapply(plot_dates, create_map)
+  
+  plots <- lapply(paste(plot_dates, selected_hour), create_map)
   
   # Combine plots side-by-side with shared legend
   if (length(plots) == 1) {
@@ -178,7 +177,8 @@ make_percent_change_map <- function(file_name,
 ```{r}
 bing_vs_admin_map <- function(date_col = "ds",
                                     value_col = "percent_change",
-                                    selected_date = NULL,   # Can be length 1 or 2
+                                    selected_date = NULL,
+                              selected_hour = NULL,
                                     output_plot_name = NULL,
                                     title_prefix = "Population Density Change (%)") {
   
@@ -210,24 +210,19 @@ bing_vs_admin_map <- function(date_col = "ds",
   
  # Compute global fill range using the summarized county-level data
   all_summarized <- df_combined |>
-    filter(.data[[date_col]] %in% plot_dates) |>
-    group_by(county_geoid, county_name, county_state, !!sym(date_col)) |>
-    summarise(mean_percent_change = mean(.data[[value_col]], na.rm = TRUE), .groups = "drop")
+    filter(.data[[date_col]] == plot_dates,
+             hour == selected_hour)
   
   fill_range <- all_summarized |>
-    summarise(min_val = min(mean_percent_change, na.rm = TRUE),
-              max_val = max(mean_percent_change, na.rm = TRUE))
+    summarise(min_val = min(percent_change, na.rm = TRUE),
+              max_val = max(percent_change, na.rm = TRUE))
   
   # Function to create a single map
   create_map <- function(df, source, plot_date = plot_dates) {
 
     latest_county <- df |>
-      filter(.data[[date_col]] == plot_date) |>
-      group_by(county_geoid, county_name, county_state) |>
-      summarise(
-        mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
-        .groups = "drop"
-      )
+      filter(.data[[date_col]] == plot_date,
+             hour == selected_hour)
   
     map_data <- counties_sf |>
       inner_join(latest_county, by = "county_geoid")
@@ -236,11 +231,16 @@ bing_vs_admin_map <- function(date_col = "ds",
   
     relevant_states <- states_sf |>
       st_filter(map_data, .predicate = st_intersects)
+    time_hr <- case_when(
+      selected_hour == "0000" ~ "12am PST",
+      selected_hour == "8000" ~ "8am PST",
+      selected_hour == "1600" ~ "4pm PST",
+      .default = "")
   
     ggplot() +
       geom_sf(
         data = map_data,
-        aes(fill = mean_percent_change),
+        aes(fill = percent_change),
         linewidth = 0.2
       ) +
       geom_sf(
@@ -261,7 +261,8 @@ bing_vs_admin_map <- function(date_col = "ds",
           labels = label_number(suffix = "%", accuracy = 1)
         )+
       labs(
-        title = paste0(plot_date, " (", source, ")"),
+        title = source,
+        subtitle = paste0(plot_date, " ",time_hr),
         fill = "% Change vs Baseline"
       ) +
       coord_sf(
@@ -378,7 +379,8 @@ Bing tile observations are assigned to counties using the latitude and longitude
 Geographically, the data is reported in two main ways: Bing tiles and administrative regions. Bing tiles divide space into small grid cells. At Bing tile level 14, each tile is roughly 2.4 kilometers on a side near the equator, or about the size of several city blocks. Administrative regions instead use boundaries such as counties, states, or other official geographic areas. These are two different approximations of the same general region and same time window, but they can show different rates of population density change (@fig-bing-vs-admin).
 
 ```{r fig-bing-vs-admin, fig.cap = "Both maps display county-level summaries for the same region and time window. The bing tile data are aggregated up to counties using tile centroid locations, while the administrative-region data are already provided by Meta at an administrative boundary level.", output = T}
-bing_vs_admin_map(selected_date = "2026-02-12")
+bing_vs_admin_map(selected_date = "2026-02-12",
+                  selected_hour = "0000")
 ```
 **Takeaways** (@fig-bing-vs-admin)
 
@@ -419,6 +421,7 @@ Finally, the data is time-limited. The documentation notes that some datasets ar
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
+  selected_hour = c("0000", "1600"),
   title_prefix = "Population Density Change (%) - Bing Tiles"
 )
 ```
