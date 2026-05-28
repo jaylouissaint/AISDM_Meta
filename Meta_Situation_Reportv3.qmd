@@ -118,11 +118,17 @@ make_percent_change_map <- function(file_name,
     ggplot() +
       geom_sf(data = map_data, aes(fill = mean_percent_change), linewidth = 0.2) +
       geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +
-      scale_fill_gradient2(
-        limits = c(fill_range$min_val, fill_range$max_val),
-        oob = squish,   # ensure values outside the plot's range are included
-        labels = label_number(suffix = "%", accuracy = 1)
-      ) +
+      scale_fill_gradientn(
+          colours = c("red", "white", "blue"),
+          values = scales::rescale(c(
+            fill_range$min_val,  # -5
+            0,
+            fill_range$max_val   # 75
+          )),
+          limits = c(fill_range$min_val, fill_range$max_val),
+          oob = squish,
+          labels = label_number(suffix = "%", accuracy = 1)
+        ) +
       labs(
         title = plot_date,
         fill = "% Change vs Baseline"
@@ -243,11 +249,17 @@ bing_vs_admin_map <- function(date_col = "ds",
         color = "black",
         linewidth = 0.7
       ) +
-      scale_fill_gradient2(
-        limits = c(fill_range$min_val, fill_range$max_val),
-        oob = squish,
-        labels = label_number(suffix = "%", accuracy = 1)
-      ) +
+      scale_fill_gradientn(
+          colours = c("red", "white", "blue"),
+          values = scales::rescale(c(
+            fill_range$min_val,  # -5
+            0,
+            fill_range$max_val   # 75
+          )),
+          limits = c(fill_range$min_val, fill_range$max_val),
+          oob = squish,
+          labels = label_number(suffix = "%", accuracy = 1)
+        )+
       labs(
         title = paste0(plot_date, " (", source, ")"),
         fill = "% Change vs Baseline"
