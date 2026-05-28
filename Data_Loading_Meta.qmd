@@ -530,7 +530,7 @@ tk_fb_data_admin <- aggregate_csvs(
   prefix = "",
   impute_counts = TRUE,
   calculate_county_change = TRUE,
-  county_group_cols = c("county_geoid", "county_name", "county_state", "ds")
+  county_group_cols = c("county_geoid", "county_name", "county_state", "ds","hour")
 )
 
 tk_fb_data_admin <- add_demographics(
@@ -553,7 +553,7 @@ tk_fb_data_bing <- aggregate_csvs(
   prefix = "",
   impute_counts = TRUE,
   calculate_county_change = TRUE,
-  county_group_cols = c("county_geoid", "county_name", "county_state", "ds")
+  county_group_cols = c("county_geoid", "county_name", "county_state", "ds","hour")
 )
 
 tk_fb_data_bing <- add_demographics(
