@@ -557,22 +557,20 @@ average_counties <- county_change_summary |>
 # TS Prep function
 make_county_time_data <- function(selected_counties) {
   tk_fb_data_bing |>
-    mutate(ds = as.Date(ds)) |>
+    mutate(ds = as.POSIXct(
+          paste(ds, hour),
+          format = "%Y-%m-%d %H%M",
+          tz = "America/Los_Angeles"
+        ))|>
     inner_join(
       selected_counties |> select(county_geoid, change_group),
       by = "county_geoid"
-    ) |>
-    group_by(ds, county_geoid, county_name, change_group) |>
-    summarise(
-      mean_percent_change = mean(percent_change, na.rm = TRUE),
-      median_percent_change = median(percent_change, na.rm = TRUE),
-      .groups = "drop"
     )
 }
 
 # Plotting functions
 plot_county_time_series <- function(time_data, plot_title) {
-  ggplot(time_data, aes(x = ds, y = mean_percent_change, color = county_name)) +
+  ggplot(time_data, aes(x = ds, y = percent_change, color = county_name)) +
     geom_hline(yintercept = 0, linewidth = 0.3) +
     geom_line(linewidth = 0.7) +
     geom_point(size = 1) +
@@ -586,26 +584,6 @@ plot_county_time_series <- function(time_data, plot_title) {
       color = "County"
     ) +
     theme_minimal()
-}
-
-## Facetted Option
-plot_county_time_series_faceted <- function(time_data, plot_title) {
-  ggplot(time_data, aes(x = ds, y = mean_percent_change, group = county_name)) +
-    geom_hline(yintercept = 0, linewidth = 0.3) +
-    geom_line(linewidth = 0.6) +
-    geom_point(size = 1) +
-    facet_wrap(~ county_name, scales = "free_y") +
-    scale_y_continuous(
-      labels = scales::label_number(suffix = "%", accuracy = 1)
-    ) +
-    labs(
-      title = plot_title,
-      x = NULL,
-      y = "% Change vs Baseline"
-    ) +
-    theme_minimal() + 
-      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-
 }
 
 ```
