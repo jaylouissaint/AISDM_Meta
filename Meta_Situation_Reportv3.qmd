@@ -432,36 +432,37 @@ make_percent_change_map(
 
 - There is little visible negative population-density change.
 
-- On February 2nd, the counties with the most increased population density are (@tbl-bing02-inc):
+- On February 2nd 12am PST, the counties with the most increased population density are (@tbl-bing02-inc):
 
-  - Fairfield, South Carolina (63.1%)
+  - Perry, Alabama (103.0%)
   
-  - Perry, Alabama (56.6%)
+  - Cleburne, Arkansas (58.1%)
   
-  - Hampton, South Carolina (37.5%)
+  - Hampton, South Carolina (57.4%)
 
 - On February 2nd, the counties with the most decreased population density are (@tbl-bing02-dec):
-  - Sevier, Tennessee (-23.3%)
+
+  - Sevier, Tennessee (-22.8%)
   
-  - Carroll, Ohio (-13.9%)
+  - Carroll, Ohio (-22.7%)
   
-  - Swain, North Carolina (-11.0%)
+  - Swain, North Carolina (-12.4%)
 
 - On February 12th, the counties with the most increased population density are (@tbl-bing12-inc):
 
-  - Monroe, Ohio (197.4%)
+  - Fairfield, South Carolina (31.3%)
   
-  - Fairfield, South Carolina (69.3%)
+  - Clay, West Virginia (26.2%)
   
-  - Issaquena, Mississippi (30.2%)
+  - Kemper, Mississippi (23.3%)
   
 - On February 12th, the counties with the most decreased population density are (@tbl-bing12-dec):
 
-  - Sevier, Tenneessee (-22.7%)
+  - Sevier, Tenneessee (-21.7%)
   
-  - Carroll, Ohio (-21.7%)
+  - Alleghany, North Carolina (-14.7%)
   
-  - Alleghany, North Carolina (-20.3%)
+  - Laurens, Georgia (-11.8%)
   
 ## Time Series of Movement
 
@@ -705,6 +706,7 @@ county_flows |>
 
 make_demographics_table <- function(file_name, 
                                     map_date = NULL,
+                                    map_hr = NULL,
                                     date_col = "ds",
                                     value_col = "percent_change",
                                     n_counties = 15,
@@ -731,31 +733,15 @@ make_demographics_table <- function(file_name,
   
   # Summarize to county level
   county_demo <- df |>
-    filter(.data[[date_col]] == map_date) |>
-    group_by(
-      county_geoid,
-      county_name,
-      county_state
-    ) |>
-    summarise(
-      mean_percent_change = mean(.data[[value_col]], na.rm = TRUE),
-      total_population = first(na.omit(total_population)),
-      median_income = first(na.omit(median_income)),
-      poverty_rate = first(na.omit(poverty_rate)),
-      pct_age_65_plus = first(na.omit(pct_age_65_plus)),
-      pct_no_vehicle = first(na.omit(pct_no_vehicle)),
-      .groups = "drop"
-    ) |>
-    mutate(
-      abs_change = abs(mean_percent_change)
-    )
+    filter(.data[[date_col]] == map_date,
+           hour == map_hr)
   
   # Create gt table
   demo_table <- county_demo |>
     select(
       County = county_name,
       State = county_state,
-      `Population Density Change` = mean_percent_change,
+      `Population Density Change` = percent_change,
       `Total Population` = total_population,
       `Median Household Income` = median_income,
       `Poverty Rate` = poverty_rate,
@@ -835,9 +821,10 @@ demographics_table_gt <- function(){
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   map_date = "2026-02-02",
+  map_hr = "0000",
   n_counties = 15,
   source = "Bing Tiles",
-  table_title = "Counties with Most Increased Population Density on 2026-02-02"
+  table_title = "Counties with Most Increased Population Density on 2026-02-02 12am PST"
 ) 
 ```
 
@@ -850,9 +837,10 @@ make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   n_counties = 15,
   map_date = "2026-02-02",
+  map_hr = "0000",
   desc = F,
   source = "Bing Tiles",
-  table_title = "Counties with Most Decreased Population Density on 2026-02-02"
+  table_title = "Counties with Most Decreased Population Density on 2026-02-02 12am PST"
 ) 
 ```
 
@@ -864,9 +852,10 @@ make_demographics_table(
 make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   map_date = "2026-02-12",
+  map_hr = "1600",
   n_counties = 15,
   source = "Bing Tiles",
-  table_title = "Counties with Most Increased Population Density on 2026-02-12"
+  table_title = "Counties with Most Increased Population Density on 2026-02-12 4pm PST"
 ) 
 ```
 
@@ -879,9 +868,10 @@ make_demographics_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   n_counties = 15,
   map_date = "2026-02-12",
+  map_hr = "1600",
   desc = F,
   source = "Bing Tiles",
-  table_title = "Counties with Most Decreased Population Density on 2026-02-12"
+  table_title = "Counties with Most Decreased Population Density on 2026-02-12 4pm PST"
   ) 
 ```
 
