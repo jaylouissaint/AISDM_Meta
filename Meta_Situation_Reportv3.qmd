@@ -321,7 +321,6 @@ The following visualizations are developed based on Meta AI for Good's data thro
 
 The main findings suggest that population-density change during the post-storm period was geographically concentrated rather than evenly distributed across the region. The strongest positive changes were repeatedly observed in a small number of counties, especially Issaquena County, Mississippi and Fairfield County, South Carolina, while Sevier County, Tennessee showed one of the strongest and most persistent negative changes. Time-series results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations.
 
-*Thoughts on this portion?: The analysis also shows that results differ depending on whether the data are summarized from Bing tiles or administrative regions; for example, Issaquena County shows a large positive population-density change in the Bing tile data but a much smaller change in the administrative-region version. Finally, demographic comparisons provide useful context for affected counties, but the scatterplots do not suggest strong linear relationships between population-density change and the included demographic variables.*
 
 # How the Data Are Constructed
 
