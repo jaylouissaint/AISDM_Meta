@@ -293,6 +293,75 @@ with tab_timeseries:
 
     if not time_data.empty:
 
+        # =====================================
+        # User-friendly county summary metrics
+        # =====================================
+        summary_df = (
+            time_data.sort_values("ds")
+            .groupby("county_name_acs")
+            .last()
+            .reset_index()
+        )
+
+        st.subheader("County Summary")
+
+        for _, row in summary_df.iterrows():
+
+            county_name = row["county_name_acs"]
+
+            total_population = row.get("total_population", None)
+            median_income = row.get("median_income", None)
+            poverty_rate = row.get("poverty_rate", None)
+            pct_age_65_plus = row.get("pct_age_65_plus", None)
+            pct_no_vehicle = row.get("pct_no_vehicle", None)
+
+            pop_text = (
+                f"{int(total_population):,}"
+                if pd.notnull(total_population)
+                else "N/A"
+            )
+
+            income_text = (
+                f"${int(median_income):,}"
+                if pd.notnull(median_income)
+                else "N/A"
+            )
+
+            poverty_text = (
+                f"{poverty_rate:.1f}%"
+                if pd.notnull(poverty_rate)
+                else "N/A"
+            )
+
+            age65_text = (
+                f"{pct_age_65_plus:.1f}%"
+                if pd.notnull(pct_age_65_plus)
+                else "N/A"
+            )
+
+            no_vehicle_text = (
+                f"{pct_no_vehicle:.1f}%"
+                if pd.notnull(pct_no_vehicle)
+                else "N/A"
+            )
+
+            st.markdown(
+                f"""
+                ### {county_name}
+
+                - **Total Population:** {pop_text}
+                - **Median Household Income:** {income_text}
+                - **Poverty Rate:** {poverty_text}
+                - **Age 65+ Population:** {age65_text}
+                - **Households Without Vehicle:** {no_vehicle_text}
+                """
+            )
+
+        st.divider()
+
+        # =====================================
+        # Time series chart
+        # =====================================
         fig_ts, ax = plt.subplots(figsize=(12, 6))
 
         sns.lineplot(
