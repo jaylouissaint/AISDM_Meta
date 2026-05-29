@@ -78,6 +78,8 @@ def load_data(file_name):
 
 df = load_data(selected_file)
 
+df["ds"] = pd.to_datetime(df["ds"]).dt.normalize()
+
 counties_sf["county_geoid"] = (
     counties_sf["county_geoid"]
     .astype(str)
@@ -89,6 +91,8 @@ df["county_geoid"] = (
     .astype(str)
     .str.zfill(5)
 )
+
+df["hour"] = df["hour"].astype(str).str.zfill(4)
 
 date_col = "ds"
 
@@ -115,6 +119,26 @@ if len(selected_dates) == 0:
     st.warning("Please select at least one date.")
     st.stop()
 
+# =========================
+# Hour selector
+# =========================
+
+hour_options = {
+    "12am PST": "0000",
+    "8am PST": "0800",
+    "4pm PST": "1600",
+}
+
+selected_hour = st.sidebar.selectbox(
+    "Select hour",
+    options=list(hour_options.keys())
+)
+
+selected_hour = hour_options[selected_hour]
+
+if len(selected_hour) == 0:
+    st.warning("Please select at least one hour.")
+    st.stop()
 
 # =========================
 # County selector
@@ -130,18 +154,14 @@ selected_counties = st.sidebar.multiselect(
 # =========================
 # Compute global fill range
 # =========================
-all_summarized = (
-    df[df[date_col].isin(selected_dates)]
-    .groupby(
-        ["county_geoid", "county_name", "county_state", date_col],
-        as_index=False
-    )[value_col]
-    .mean()
-    .rename(columns={value_col: "mean_percent_change"})
-)
+all_summarized = df[
+    df[date_col].isin(selected_dates) &
+    (df["hour"] == selected_hour)
+]
 
-fill_min = all_summarized["mean_percent_change"].min()
-fill_max = all_summarized["mean_percent_change"].max()
+
+fill_min = all_summarized["percent_change"].min()
+fill_max = all_summarized["percent_change"].max()
 
 # Center colormap at 0
 norm = TwoSlopeNorm(
@@ -180,15 +200,10 @@ def make_county_time_data(selected_county_names):
 # =========================
 def create_map(plot_date):
 
-    latest_county = (
-        df[df[date_col] == plot_date]
-        .groupby(
-            ["county_geoid", "county_name", "county_state"],
-            as_index=False
-        )[value_col]
-        .mean()
-        .rename(columns={value_col: "mean_percent_change"})
-    )
+    latest_county = df[
+    (df[date_col] == plot_date) &
+    (df["hour"] == selected_hour)
+    ]
 
     # Keep only geometry from shapefile to avoid duplicate columns
     counties_geometry = counties_sf[
@@ -200,6 +215,7 @@ def create_map(plot_date):
         on="county_geoid",
         how="inner"
     )
+    map_data["ds"] = map_data["ds"].astype(str)
 
     # Convert GeoDataFrame to GeoJSON
     geojson_data = json.loads(map_data.to_json())
@@ -209,19 +225,19 @@ def create_map(plot_date):
         geojson=geojson_data,
         locations="county_geoid",
         featureidkey="properties.county_geoid",
-        color="mean_percent_change",
+        color="percent_change",
         color_continuous_scale="RdBu_r",
         range_color=(fill_min, fill_max),
         scope="usa",
         hover_name="county_name",
         hover_data={
             "county_state": True,
-            "mean_percent_change": ":.2f",
+            "percent_change": ":.2f",
             "county_geoid": False
         },
         labels={
             "county_state": "State",
-            "mean_percent_change": "% Change"
+            "percent_change": "% Change"
         }
     )
 
