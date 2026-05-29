@@ -968,18 +968,18 @@ wrap_plots(plot_list, ncol = 2, guides = "collect") &
 ```
 
 
-```{r fig-imputation-share, fig.cap = "Share of total baseline and crisis counts that come from imputed values.", output = TRUE}
-
-make_imputation_stacked_bar <- function(file_name,
-                                        date_col = "ds",
-                                        selected_date = NULL,
-                                        selected_hour = NULL,
-                                        output_plot_name = NULL,
-                                        title = "Share of County-Level Counts from Imputation") {
+```{r}
+make_imputation_summary_table <- function(file_name,
+                                          date_col = "ds",
+                                          selected_date = NULL,
+                                          selected_hour = NULL,
+                                          output_table_name = NULL,
+                                          table_title = "Imputation Summary",
+                                          output_dir = "Outputs") {
   
   # Read file from Outputs folder
   df <- readr::read_csv(
-    here::here("Outputs", file_name),
+    here::here(output_dir, file_name),
     show_col_types = FALSE
   )
   
@@ -990,6 +990,7 @@ make_imputation_stacked_bar <- function(file_name,
   # Optional date filter
   if (!is.null(selected_date)) {
     selected_date <- as.Date(selected_date)
+    
     df <- df |>
       dplyr::filter(.data[[date_col]] %in% selected_date)
   }
@@ -1000,55 +1001,86 @@ make_imputation_stacked_bar <- function(file_name,
       dplyr::filter(hour %in% selected_hour)
   }
   
-  # Check required columns
-  required_cols <- c(
+  # Check required columns for count shares
+  required_count_cols <- c(
     "n_baseline",
     "n_crisis",
     "n_baseline_imputed_amount",
     "n_crisis_imputed_amount"
   )
   
-  missing_cols <- setdiff(required_cols, names(df))
+  missing_count_cols <- setdiff(required_count_cols, names(df))
   
-  if (length(missing_cols) > 0) {
+  if (length(missing_count_cols) > 0) {
     stop(
-      "Missing required columns: ",
-      paste(missing_cols, collapse = ", "),
+      "Missing required count columns: ",
+      paste(missing_count_cols, collapse = ", "),
       ". Re-run the loading QMD with imputation turned on."
     )
   }
   
-  # Summarize total observed and imputed counts
-  imputation_summary <- df |>
-    dplyr::summarise(
-      total_baseline = sum(n_baseline, na.rm = TRUE),
-      imputed_baseline = sum(n_baseline_imputed_amount, na.rm = TRUE),
-      total_crisis = sum(n_crisis, na.rm = TRUE),
-      imputed_crisis = sum(n_crisis_imputed_amount, na.rm = TRUE)
-    ) |>
-    dplyr::mutate(
-      observed_baseline = total_baseline - imputed_baseline,
-      observed_crisis = total_crisis - imputed_crisis
-    )
+  # If the data has already been aggregated to county-window level,
+  # use n_rows_aggregated and *_imputed_rows.
+  # Otherwise, fall back to row counts and binary imputation flags.
+  if ("n_rows_aggregated" %in% names(df)) {
+    total_tiles <- sum(df$n_rows_aggregated, na.rm = TRUE)
+  } else {
+    total_tiles <- nrow(df)
+  }
   
-  # Reshape for stacked bar chart
-  plot_data <- tibble::tibble(
-    count_type = c("Baseline", "Baseline", "Crisis", "Crisis"),
-    source = c("Observed", "Imputed", "Observed", "Imputed"),
-    count = c(
-      imputation_summary$observed_baseline,
-      imputation_summary$imputed_baseline,
-      imputation_summary$observed_crisis,
-      imputation_summary$imputed_crisis
+  if ("n_baseline_imputed_rows" %in% names(df)) {
+    baseline_imputed_tiles <- sum(df$n_baseline_imputed_rows, na.rm = TRUE)
+  } else if ("n_baseline_imputed" %in% names(df)) {
+    baseline_imputed_tiles <- sum(df$n_baseline_imputed, na.rm = TRUE)
+  } else {
+    stop("Missing n_baseline_imputed_rows or n_baseline_imputed.")
+  }
+  
+  if ("n_crisis_imputed_rows" %in% names(df)) {
+    crisis_imputed_tiles <- sum(df$n_crisis_imputed_rows, na.rm = TRUE)
+  } else if ("n_crisis_imputed" %in% names(df)) {
+    crisis_imputed_tiles <- sum(df$n_crisis_imputed, na.rm = TRUE)
+  } else {
+    stop("Missing n_crisis_imputed_rows or n_crisis_imputed.")
+  }
+  
+  # Summarize counts and imputed shares
+  imputation_summary <- tibble::tibble(
+    Count = c("Baseline", "Crisis"),
+    `Total Count` = c(
+      sum(df$n_baseline, na.rm = TRUE),
+      sum(df$n_crisis, na.rm = TRUE)
+    ),
+    `Imputed Count` = c(
+      sum(df$n_baseline_imputed_amount, na.rm = TRUE),
+      sum(df$n_crisis_imputed_amount, na.rm = TRUE)
+    ),
+    `Imputed Bing Tiles` = c(
+      baseline_imputed_tiles,
+      crisis_imputed_tiles
+    ),
+    `Total Bing Tiles` = c(
+      total_tiles,
+      total_tiles
     )
   ) |>
-    dplyr::group_by(count_type) |>
     dplyr::mutate(
-      pct = count / sum(count, na.rm = TRUE)
+      `Observed Count` = `Total Count` - `Imputed Count`,
+      `Share of Count Imputed` = `Imputed Count` / `Total Count`,
+      `Share of Bing Tiles Imputed` = `Imputed Bing Tiles` / `Total Bing Tiles`
     ) |>
-    dplyr::ungroup()
+    dplyr::select(
+      Count,
+      `Total Count`,
+      `Observed Count`,
+      `Imputed Count`,
+      `Share of Count Imputed`,
+      `Total Bing Tiles`,
+      `Imputed Bing Tiles`,
+      `Share of Bing Tiles Imputed`
+    )
   
-  # Build subtitle
+  # Subtitle based on filters
   subtitle_text <- dplyr::case_when(
     !is.null(selected_date) & !is.null(selected_hour) ~ paste(
       "Filtered to",
@@ -1067,53 +1099,60 @@ make_imputation_stacked_bar <- function(file_name,
     TRUE ~ "All available dates and hours"
   )
   
-  # Plot
- p <- ggplot2::ggplot(
-  plot_data,
-  ggplot2::aes(
-    x = count_type,
-    y = pct,
-    fill = source
-  )
-) +
-  ggplot2::geom_col(width = 0.65) +
-  ggplot2::geom_text(
-    ggplot2::aes(label = scales::percent(pct, accuracy = 0.1)),
-    position = ggplot2::position_stack(vjust = 0.5),
-    size = 3
-  ) +
-  ggplot2::scale_fill_manual(
-    values = c(
-      "Observed" = "blue",
-      "Imputed" = "orange"
+  # Build gt table
+  imputation_table <- imputation_summary |>
+    gt::gt() |>
+    gt::tab_header(
+      title = table_title,
+      subtitle = subtitle_text
+    ) |>
+    gt::fmt_number(
+      columns = c(
+        `Total Count`,
+        `Observed Count`,
+        `Imputed Count`,
+        `Total Bing Tiles`,
+        `Imputed Bing Tiles`
+      ),
+      decimals = 0,
+      use_seps = TRUE
+    ) |>
+    gt::fmt_percent(
+      columns = c(
+        `Share of Count Imputed`,
+        `Share of Bing Tiles Imputed`
+      ),
+      decimals = 1
+    ) |>
+    gt::cols_align(
+      align = "center",
+      columns = everything()
+    ) |>
+    gt::tab_options(
+      table.font.size = gt::px(11),
+      heading.title.font.size = gt::px(14),
+      heading.subtitle.font.size = gt::px(10),
+      data_row.padding = gt::px(5)
     )
-  ) +
-  ggplot2::scale_y_continuous(
-    labels = scales::percent_format(accuracy = 1)
-  ) +
-  ggplot2::labs(
-    title = title,
-    subtitle = subtitle_text,
-    x = NULL,
-    y = "Share of total count",
-    fill = NULL
-  ) +
-  ggplot2::theme_minimal()
   
   # Save if requested
-  if (!is.null(output_plot_name)) {
-    ggplot2::ggsave(
-      filename = here::here("Outputs", output_plot_name),
-      plot = p,
-      width = 8,
-      height = 5
+  if (!is.null(output_table_name)) {
+    gt::gtsave(
+      imputation_table,
+      here::here(output_dir, output_table_name)
     )
   }
   
-  return(p)
+  return(imputation_table)
 }
+```
 
-make_imputation_stacked_bar(
+
+```{r, output = TRUE}
+#| label: tbl-imputation-summary-window
+#| tbl-cap: "Share of total baseline and crisis counts and Bing tile observations that come from imputed values for the selected reporting window."
+
+make_imputation_summary_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv"
 )
 ```
