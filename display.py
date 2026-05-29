@@ -143,7 +143,7 @@ if len(selected_hour) == 0:
 # =========================
 # County selector
 # =========================
-available_counties = sorted(df["county_name"].dropna().unique())
+available_counties = sorted(df["county_name_acs"].dropna().unique())
 
 selected_counties = st.sidebar.multiselect(
     "Select counties",
@@ -173,24 +173,25 @@ norm = TwoSlopeNorm(
 # =========================
 # County time series prep
 # =========================
-def make_county_time_data(selected_county_names):
 
-    filtered = df[
-        df["county_name"].isin(selected_county_names)
-    ].copy()
+def make_county_time_data(selected_counties):
 
-    summary = (
-        filtered.groupby(
-            ["ds", "county_geoid", "county_name"],
-            as_index=False
-        )
-        .agg(
-            mean_percent_change=("percent_change", "mean"),
-            median_percent_change=("percent_change", "median")
+    filtered_df = df.copy()
+
+    # Filter only if counties selected
+    if len(selected_counties) > 0:
+        filtered_df = filtered_df[
+            filtered_df["county_name_acs"].isin(selected_counties)
+        ]
+
+    return (
+        filtered_df.assign(
+            ds=pd.to_datetime(
+                filtered_df["ds"].astype(str) + " " + filtered_df["hour"].astype(str),
+                format="%Y-%m-%d %H%M"
+            ).dt.tz_localize("America/Los_Angeles")
         )
     )
-
-    return summary
 
 # =========================
 # Map plotting function
@@ -229,7 +230,7 @@ def create_map(plot_date):
         color_continuous_scale="RdBu_r",
         range_color=(fill_min, fill_max),
         scope="usa",
-        hover_name="county_name",
+        hover_name="county_name_acs",
         hover_data={
             "county_state": True,
             "percent_change": ":.2f",
@@ -297,8 +298,8 @@ with tab_timeseries:
         sns.lineplot(
             data=time_data,
             x="ds",
-            y="mean_percent_change",
-            hue="county_name",
+            y="percent_change",
+            hue="county_name_acs",
             marker="o",
             ax=ax
         )
@@ -334,12 +335,12 @@ with tab_table:
     # Filter counties only if selected
     if len(selected_counties) > 0:
         table_df = table_df[
-            table_df["county_name"].isin(selected_counties)
+            table_df["county_name_acs"].isin(selected_counties)
         ]
 
     # Optional sorting
     table_df = table_df.sort_values(
-        by=[date_col, "county_state", "county_name"]
+        by=[date_col, "county_state", "county_name_acs"]
     )
 
     st.dataframe(
