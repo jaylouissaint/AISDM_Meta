@@ -968,6 +968,157 @@ wrap_plots(plot_list, ncol = 2, guides = "collect") &
 ```
 
 
+```{r fig-imputation-share, fig.cap = "Share of total baseline and crisis counts that come from imputed values.", output = TRUE}
+
+make_imputation_stacked_bar <- function(file_name,
+                                        date_col = "ds",
+                                        selected_date = NULL,
+                                        selected_hour = NULL,
+                                        output_plot_name = NULL,
+                                        title = "Share of County-Level Counts from Imputation") {
+  
+  # Read file from Outputs folder
+  df <- readr::read_csv(
+    here::here("Outputs", file_name),
+    show_col_types = FALSE
+  )
+  
+  # Make sure date is treated as Date
+  df <- df |>
+    dplyr::mutate("{date_col}" := as.Date(.data[[date_col]]))
+  
+  # Optional date filter
+  if (!is.null(selected_date)) {
+    selected_date <- as.Date(selected_date)
+    df <- df |>
+      dplyr::filter(.data[[date_col]] %in% selected_date)
+  }
+  
+  # Optional hour filter
+  if (!is.null(selected_hour)) {
+    df <- df |>
+      dplyr::filter(hour %in% selected_hour)
+  }
+  
+  # Check required columns
+  required_cols <- c(
+    "n_baseline",
+    "n_crisis",
+    "n_baseline_imputed_amount",
+    "n_crisis_imputed_amount"
+  )
+  
+  missing_cols <- setdiff(required_cols, names(df))
+  
+  if (length(missing_cols) > 0) {
+    stop(
+      "Missing required columns: ",
+      paste(missing_cols, collapse = ", "),
+      ". Re-run the loading QMD with imputation turned on."
+    )
+  }
+  
+  # Summarize total observed and imputed counts
+  imputation_summary <- df |>
+    dplyr::summarise(
+      total_baseline = sum(n_baseline, na.rm = TRUE),
+      imputed_baseline = sum(n_baseline_imputed_amount, na.rm = TRUE),
+      total_crisis = sum(n_crisis, na.rm = TRUE),
+      imputed_crisis = sum(n_crisis_imputed_amount, na.rm = TRUE)
+    ) |>
+    dplyr::mutate(
+      observed_baseline = total_baseline - imputed_baseline,
+      observed_crisis = total_crisis - imputed_crisis
+    )
+  
+  # Reshape for stacked bar chart
+  plot_data <- tibble::tibble(
+    count_type = c("Baseline", "Baseline", "Crisis", "Crisis"),
+    source = c("Observed", "Imputed", "Observed", "Imputed"),
+    count = c(
+      imputation_summary$observed_baseline,
+      imputation_summary$imputed_baseline,
+      imputation_summary$observed_crisis,
+      imputation_summary$imputed_crisis
+    )
+  ) |>
+    dplyr::group_by(count_type) |>
+    dplyr::mutate(
+      pct = count / sum(count, na.rm = TRUE)
+    ) |>
+    dplyr::ungroup()
+  
+  # Build subtitle
+  subtitle_text <- dplyr::case_when(
+    !is.null(selected_date) & !is.null(selected_hour) ~ paste(
+      "Filtered to",
+      paste(selected_date, collapse = ", "),
+      "and hour(s)",
+      paste(selected_hour, collapse = ", ")
+    ),
+    !is.null(selected_date) ~ paste(
+      "Filtered to",
+      paste(selected_date, collapse = ", ")
+    ),
+    !is.null(selected_hour) ~ paste(
+      "Filtered to hour(s)",
+      paste(selected_hour, collapse = ", ")
+    ),
+    TRUE ~ "All available dates and hours"
+  )
+  
+  # Plot
+ p <- ggplot2::ggplot(
+  plot_data,
+  ggplot2::aes(
+    x = count_type,
+    y = pct,
+    fill = source
+  )
+) +
+  ggplot2::geom_col(width = 0.65) +
+  ggplot2::geom_text(
+    ggplot2::aes(label = scales::percent(pct, accuracy = 0.1)),
+    position = ggplot2::position_stack(vjust = 0.5),
+    size = 3
+  ) +
+  ggplot2::scale_fill_manual(
+    values = c(
+      "Observed" = "blue",
+      "Imputed" = "orange"
+    )
+  ) +
+  ggplot2::scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1)
+  ) +
+  ggplot2::labs(
+    title = title,
+    subtitle = subtitle_text,
+    x = NULL,
+    y = "Share of total count",
+    fill = NULL
+  ) +
+  ggplot2::theme_minimal()
+  
+  # Save if requested
+  if (!is.null(output_plot_name)) {
+    ggplot2::ggsave(
+      filename = here::here("Outputs", output_plot_name),
+      plot = p,
+      width = 8,
+      height = 5
+    )
+  }
+  
+  return(p)
+}
+
+make_imputation_stacked_bar(
+  file_name = "tk_facebook_pop_aggregated_bing.csv"
+)
+```
+
+
 {{< pagebreak >}}
 
 # References
