@@ -1127,11 +1127,16 @@ make_imputation_summary_table <- function(file_name,
       align = "center",
       columns = everything()
     ) |>
-    gt::tab_options(
-      table.font.size = gt::px(11),
-      heading.title.font.size = gt::px(14),
-      heading.subtitle.font.size = gt::px(10),
-      data_row.padding = gt::px(5)
+    tab_options(
+      table.font.size = px(9),
+      heading.title.font.size = px(16),
+      heading.subtitle.font.size = px(9),
+      data_row.padding = px(5),
+      column_labels.padding = px(0),
+      table.width = pct(100)
+    ) |>
+    cols_width(
+      everything() ~ px(70)
     )
   
   # Save if requested
