@@ -390,101 +390,109 @@ with tab_timeseries:
 
     if not time_data.empty:
 
-        # =====================================
+                # =====================================
         # User-friendly county summary metrics
         # =====================================
-        summary_df = (
-            time_data.sort_values("ds")
-            .groupby("county_name_acs")
-            .last()
-            .reset_index()
-        )
+        if len(selected_counties) > 0:
 
-        st.subheader("County Summary")
-
-        for _, row in summary_df.iterrows():
-
-            county_name = row["county_name_acs"]
-
-            total_population = row.get("total_population", None)
-            median_income = row.get("median_income", None)
-            poverty_rate = row.get("poverty_rate", None)
-            pct_age_65_plus = row.get("pct_age_65_plus", None)
-            pct_no_vehicle = row.get("pct_no_vehicle", None)
-
-            pop_text = (
-                f"{int(total_population):,}"
-                if pd.notnull(total_population)
-                else "N/A"
+            summary_df = (
+                time_data.sort_values("ds")
+                .groupby("county_name_acs")
+                .last()
+                .reset_index()
             )
 
-            income_text = (
-                f"${int(median_income):,}"
-                if pd.notnull(median_income)
-                else "N/A"
-            )
+            st.subheader("County Summary")
 
-            poverty_text = (
-                f"{poverty_rate:.1f}%"
-                if pd.notnull(poverty_rate)
-                else "N/A"
-            )
+            for _, row in summary_df.iterrows():
 
-            age65_text = (
-                f"{pct_age_65_plus:.1f}%"
-                if pd.notnull(pct_age_65_plus)
-                else "N/A"
-            )
+                county_name = row["county_name_acs"]
 
-            no_vehicle_text = (
-                f"{pct_no_vehicle:.1f}%"
-                if pd.notnull(pct_no_vehicle)
-                else "N/A"
-            )
+                total_population = row.get("total_population", None)
+                median_income = row.get("median_income", None)
+                poverty_rate = row.get("poverty_rate", None)
+                pct_age_65_plus = row.get("pct_age_65_plus", None)
+                pct_no_vehicle = row.get("pct_no_vehicle", None)
 
-            st.markdown(
-                f"""
-                ### {county_name}
+                pop_text = (
+                    f"{int(total_population):,}"
+                    if pd.notnull(total_population)
+                    else "N/A"
+                )
 
-                - **Total Population:** {pop_text}
-                - **Median Household Income:** {income_text}
-                - **Poverty Rate:** {poverty_text}
-                - **Age 65+ Population:** {age65_text}
-                - **Households Without Vehicle:** {no_vehicle_text}
-                """
-            )
+                income_text = (
+                    f"${int(median_income):,}"
+                    if pd.notnull(median_income)
+                    else "N/A"
+                )
 
-        st.divider()
+                poverty_text = (
+                    f"{poverty_rate:.1f}%"
+                    if pd.notnull(poverty_rate)
+                    else "N/A"
+                )
+
+                age65_text = (
+                    f"{pct_age_65_plus:.1f}%"
+                    if pd.notnull(pct_age_65_plus)
+                    else "N/A"
+                )
+
+                no_vehicle_text = (
+                    f"{pct_no_vehicle:.1f}%"
+                    if pd.notnull(pct_no_vehicle)
+                    else "N/A"
+                )
+
+                st.markdown(
+                    f"""
+                    ### {county_name}
+
+                    - **Total Population:** {pop_text}
+                    - **Median Household Income:** {income_text}
+                    - **Poverty Rate:** {poverty_text}
+                    - **Age 65+ Population:** {age65_text}
+                    - **Households Without Vehicle:** {no_vehicle_text}
+                    """
+                )
+
+            st.divider()
 
         # =====================================
         # Time series chart
         # =====================================
-        fig_ts, ax = plt.subplots(figsize=(12, 6))
-
-        sns.lineplot(
-            data=time_data,
+        fig_ts = px.line(
+            time_data,
             x="ds",
             y="percent_change",
-            hue="county_name_acs",
-            marker="o",
-            ax=ax
+            color="county_name_acs",
+            markers=True,
+            hover_name="county_name_acs",
+            hover_data={
+                "percent_change": ":.2f",
+                "ds": True
+            }
         )
 
-        ax.axhline(
+        fig_ts.add_hline(
             y=0,
-            color="black",
-            linewidth=0.5,
-            linestyle="--"
+            line_dash="dash",
+            line_color="black",
+            line_width=1
         )
 
-        ax.set_title("County Percent Change Over Time")
+        fig_ts.update_layout(
+            title="County Percent Change Over Time",
+            xaxis_title="",
+            yaxis_title="% Change vs Baseline",
+            showlegend=False,  # removes legend
+            height=600
+        )
 
-        ax.set_xlabel("")
-        ax.set_ylabel("% Change vs Baseline")
-
-        plt.xticks(rotation=45)
-
-        st.pyplot(fig_ts)
+        st.plotly_chart(
+            fig_ts,
+            use_container_width=True
+        )
 
     else:
         st.warning("No county data available.")
