@@ -54,13 +54,13 @@ counties_sf, states_sf = load_spatial_data()
 OUTPUTS_DIR = Path("./outputs")
 
 aggregation_options = {
-    "Bing Tiles": "tk_facebook_pop_aggregated_bing.csv",
-    "Administrative Regions": "tk_facebook_pop_aggregated_admin.csv"
+    "Bing Tiles": "tk_facebook_pop_aggregated_bing.parquet",
+    "Administrative Regions": "tk_facebook_pop_aggregated_admin.parquet"
 }
 
 scatter_files = {
-    "Bing Tiles": "tk_facebook_pop_bing.csv",
-    "Administrative Regions": "tk_facebook_pop_admin.csv"
+    "Bing Tiles": "tk_facebook_pop_bing.parquet",
+    "Administrative Regions": "tk_facebook_pop_admin.parquet"
 }
 
 selected_aggregation = st.sidebar.selectbox(
@@ -85,7 +85,9 @@ county_geojson = load_geojson()
 # =========================
 @st.cache_data
 def load_data(file_name):
-    return pd.read_csv(OUTPUTS_DIR / file_name)
+    return pd.read_parquet(
+        OUTPUTS_DIR / file_name
+    )
 
 
 df = load_data(selected_file)
