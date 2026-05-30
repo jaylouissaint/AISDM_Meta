@@ -124,6 +124,10 @@ title_prefix = "Population Density Change (%)"
 # Convert date column
 df[date_col] = pd.to_datetime(df[date_col])
 
+
+@st.cache_data
+def get_map_data(df, dt):
+    return df[df["datetime"] == dt]
 # =========================
 # Date-Time selector
 # =========================
@@ -205,15 +209,12 @@ def create_scatter_data():
 # =========================
 # Interactive map plotting
 # =========================
+import time
 def create_map(plot_datetime):
+    start = time.time()
+    latest_county = get_map_data(df, selected_datetime)
 
-    latest_county = df[
-        df["datetime"] == plot_datetime
-    ].copy()
-
-    # Convert GeoDataFrame to GeoJSON
-
-    fig = px.choropleth(
+    fig = px.choropleth_mapbox(
         latest_county,
         geojson=county_geojson,
         locations="county_geoid",
@@ -221,7 +222,6 @@ def create_map(plot_datetime):
         color="percent_change",
         color_continuous_scale="RdBu_r",
         range_color=(fill_min, fill_max),
-        scope="usa",
         hover_name="county_name_acs",
         hover_data={
             "county_state": True,
@@ -231,12 +231,10 @@ def create_map(plot_datetime):
         labels={
             "county_state": "State",
             "percent_change": "% Change"
-        }
-    )
-
-    fig.update_geos(
-        fitbounds="locations",
-        visible=False
+        },
+        mapbox_style="carto-positron",
+        center={"lat": 36, "lon": -88},
+        zoom=5
     )
 
     fig.update_layout(
@@ -244,6 +242,9 @@ def create_map(plot_datetime):
         margin={"r": 0, "t": 40, "l": 0, "b": 0},
         height=700
     )
+
+    end = time.time()
+    print(f"Map creation time: {end - start:.2f} seconds")
 
     return fig
 
