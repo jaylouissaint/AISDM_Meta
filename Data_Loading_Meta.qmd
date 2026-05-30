@@ -617,6 +617,7 @@ tk_facebook_pop_bing <- aggregate_csvs(
    lat_col = "latitude",
    lon_col = "longitude",
    prefix = "",
+   impute_counts = TRUE
  )
 
 tk_facebook_pop_bing <- add_demographics(
@@ -637,6 +638,7 @@ tk_facebook_pop_admin <- aggregate_csvs(
    lat_col = "latitude",
    lon_col = "longitude",
    prefix = "",
+   impute_counts = TRUE
  )
 
 tk_facebook_pop_admin <- add_demographics(
