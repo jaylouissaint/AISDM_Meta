@@ -609,3 +609,44 @@ write_csv(
   here("Outputs", "tk_network_coverage_aggregated_undetected.csv")
 )
 ```
+
+```{r}
+tk_facebook_pop_bing <- aggregate_csvs(
+   path_parts = c("Data", "Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis", "Bing_Tiles"),
+   output_name = "tk_facebook_pop_bing.csv",
+   lat_col = "latitude",
+   lon_col = "longitude",
+   prefix = "",
+ )
+
+tk_facebook_pop_bing <- add_demographics(
+   df = tk_facebook_pop_bing,
+   geoid_col = "county_geoid"
+ )
+
+write_csv(
+   tk_facebook_pop_bing,
+   here("Outputs", "tk_facebook_pop_bing.csv")
+ )
+```
+
+```{r}
+tk_facebook_pop_admin <- aggregate_csvs(
+   path_parts = c("Data", "Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis", "Administrative_Regions"),
+   output_name = "tk_facebook_pop_admin.csv",
+   lat_col = "latitude",
+   lon_col = "longitude",
+   prefix = "",
+ )
+
+tk_facebook_pop_admin <- add_demographics(
+   df = tk_facebook_pop_admin,
+   geoid_col = "county_geoid"
+ )
+
+write_csv(
+   tk_facebook_pop_admin,
+   here("Outputs", "tk_facebook_pop_admin.csv")
+ )
+```
+
