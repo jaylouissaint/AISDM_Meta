@@ -70,8 +70,18 @@ selected_aggregation = st.sidebar.selectbox(
 
 selected_file = aggregation_options[selected_aggregation]
 
+# =========================
+# Create the GeoJSON
+# =========================
 
+@st.cache_data
+def get_geojson():
+    counties_geometry = counties_sf[
+        ["county_geoid", "geometry"]
+    ]
+    return json.loads(counties_geometry.to_json())
 
+county_geojson = get_geojson()
 
 # =========================
 # Load data
@@ -200,25 +210,13 @@ def create_map(plot_datetime):
 
     latest_county = df[
         df["datetime"] == plot_datetime
-    ]
-
-    counties_geometry = counties_sf[
-        ["county_geoid", "geometry"]
-    ]
-
-    map_data = counties_geometry.merge(
-        latest_county,
-        on="county_geoid",
-        how="inner"
-    )
-    map_data["datetime"] = map_data["datetime"].astype(str)
+    ].copy()
 
     # Convert GeoDataFrame to GeoJSON
-    geojson_data = json.loads(map_data.to_json())
 
     fig = px.choropleth(
-        map_data,
-        geojson=geojson_data,
+        latest_county,
+        geojson=county_geojson,
         locations="county_geoid",
         featureidkey="properties.county_geoid",
         color="percent_change",
