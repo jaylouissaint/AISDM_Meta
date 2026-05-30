@@ -30,3 +30,7 @@ states_sf = states_sf.rename(columns={
 # Save
 counties_sf.to_parquet("data/counties.parquet")
 states_sf.to_parquet("data/states.parquet")
+counties_sf[["county_geoid", "geometry"]].to_file(
+    "data/counties.geojson",
+    driver="GeoJSON"
+)

@@ -74,15 +74,12 @@ selected_file = aggregation_options[selected_aggregation]
 # Create the GeoJSON
 # =========================
 
-@st.cache_data
-def get_geojson():
-    counties_geometry = counties_sf[
-        ["county_geoid", "geometry"]
-    ]
-    return json.loads(counties_geometry.to_json())
+@st.cache_resource
+def load_geojson():
+    with open("data/counties.geojson") as f:
+        return json.load(f)
 
-county_geojson = get_geojson()
-
+county_geojson = load_geojson()
 # =========================
 # Load data
 # =========================
