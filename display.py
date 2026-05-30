@@ -85,16 +85,15 @@ df = load_data(selected_file)
 
 scatter_df = load_data(scatter_files[selected_aggregation])
 
-scatter_df["ds"] = pd.to_datetime(scatter_df["ds"]).dt.normalize()
-
-scatter_df["hour"] = (
-    scatter_df["hour"]
-    .astype(str)
-    .str.zfill(4)
+df["datetime"] = pd.to_datetime(
+    df["ds"].astype(str) + " " + df["hour"].astype(str).str.zfill(4),
+    format="%Y-%m-%d %H%M"
 )
 
-df["ds"] = pd.to_datetime(df["ds"]).dt.normalize()
-
+scatter_df["datetime"] = pd.to_datetime(
+    scatter_df["ds"].astype(str) + " " + scatter_df["hour"].astype(str).str.zfill(4),
+    format="%Y-%m-%d %H%M"
+)
 counties_sf["county_geoid"] = (
     counties_sf["county_geoid"]
     .astype(str)
@@ -107,9 +106,7 @@ df["county_geoid"] = (
     .str.zfill(5)
 )
 
-df["hour"] = df["hour"].astype(str).str.zfill(4)
-
-date_col = "ds"
+date_col = "datetime"
 
 value_col = "percent_change"
 
@@ -119,41 +116,17 @@ title_prefix = "Population Density Change (%)"
 df[date_col] = pd.to_datetime(df[date_col])
 
 # =========================
-# Date selector
+# Date-Time selector
 # =========================
-available_dates = sorted(df[date_col].dropna().unique())
 
-selected_dates = st.sidebar.multiselect(
-    "Select date(s)",
-    options=available_dates,
-    default=[available_dates[-1]],
-    format_func=lambda x: pd.to_datetime(x).strftime("%Y-%m-%d")
+available_datetimes = sorted(df["datetime"].dropna().unique())
+
+selected_datetime = st.sidebar.select_slider(
+    "Select date and hour",
+    options=available_datetimes,
+    value=available_datetimes[-1],
+    format_func=lambda x: pd.Timestamp(x).strftime("%Y-%m-%d %I:%M %p")
 )
-
-if len(selected_dates) == 0:
-    st.warning("Please select at least one date.")
-    st.stop()
-
-# =========================
-# Hour selector
-# =========================
-
-hour_options = {
-    "12am PST": "0000",
-    "8am PST": "0800",
-    "4pm PST": "1600",
-}
-
-selected_hour = st.sidebar.selectbox(
-    "Select hour",
-    options=list(hour_options.keys())
-)
-
-selected_hour = hour_options[selected_hour]
-
-if len(selected_hour) == 0:
-    st.warning("Please select at least one hour.")
-    st.stop()
 
 # =========================
 # County selector
@@ -170,8 +143,7 @@ selected_counties = st.sidebar.multiselect(
 # Compute global fill range
 # =========================
 all_summarized = df[
-    df[date_col].isin(selected_dates) &
-    (df["hour"] == selected_hour)
+    df["datetime"] == selected_datetime
 ]
 
 
@@ -199,14 +171,7 @@ def make_county_time_data(selected_counties):
             filtered_df["county_name_acs"].isin(selected_counties)
         ]
 
-    return (
-        filtered_df.assign(
-            ds=pd.to_datetime(
-                filtered_df["ds"].astype(str) + " " + filtered_df["hour"].astype(str),
-                format="%Y-%m-%d %H%M"
-            ).dt.tz_localize("America/Los_Angeles")
-        )
-    )
+    return filtered_df
 
 # =========================
 # Scatterplot prep
@@ -215,11 +180,9 @@ def make_county_time_data(selected_counties):
 def create_scatter_data():
 
     scatter_filtered = scatter_df[
-        scatter_df["ds"].isin(selected_dates)
-        & (scatter_df["hour"] == selected_hour)
+        scatter_df["datetime"] == selected_datetime
     ].copy()
 
-    # county filter
     if len(selected_counties) > 0:
         scatter_filtered = scatter_filtered[
             scatter_filtered["county_name_acs"].isin(selected_counties)
@@ -233,14 +196,12 @@ def create_scatter_data():
 # =========================
 # Interactive map plotting
 # =========================
-def create_map(plot_date):
+def create_map(plot_datetime):
 
     latest_county = df[
-    (df[date_col] == plot_date) &
-    (df["hour"] == selected_hour)
+        df["datetime"] == plot_datetime
     ]
 
-    # Keep only geometry from shapefile to avoid duplicate columns
     counties_geometry = counties_sf[
         ["county_geoid", "geometry"]
     ]
@@ -250,7 +211,7 @@ def create_map(plot_date):
         on="county_geoid",
         how="inner"
     )
-    map_data["ds"] = map_data["ds"].astype(str)
+    map_data["datetime"] = map_data["datetime"].astype(str)
 
     # Convert GeoDataFrame to GeoJSON
     geojson_data = json.loads(map_data.to_json())
@@ -282,7 +243,7 @@ def create_map(plot_date):
     )
 
     fig.update_layout(
-        title=pd.to_datetime(plot_date).strftime("%Y-%m-%d"),
+        title=pd.Timestamp(plot_datetime).strftime("%Y-%m-%d %I:%M %p"),
         margin={"r": 0, "t": 40, "l": 0, "b": 0},
         height=700
     )
@@ -309,19 +270,12 @@ with tab_maps:
 
     st.header(title_prefix)
 
-    cols = st.columns(len(selected_dates))
+    fig = create_map(selected_datetime)
 
-    for idx, plot_date in enumerate(selected_dates):
-
-        fig = create_map(plot_date)
-
-        with cols[idx]:
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-    
-        st.divider()
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
 
 # =========================
 # Scatterplot tab
@@ -337,18 +291,12 @@ with tab_scatter:
 
     if not scatter_data.empty:
 
-        scatter_data["date_label"] = (
-            pd.to_datetime(scatter_data["ds"])
-            .dt.strftime("%Y-%m-%d")
-        )
-
         fig_scatter = px.scatter(
             scatter_data,
             x="longitude",
             y="latitude",
             color="percent_change",
             size="n_crisis",
-            facet_col="date_label" if len(selected_dates) > 1 else None,
             color_continuous_scale="RdBu_r",
             range_color=(fill_min, fill_max),
             hover_data={
@@ -390,13 +338,13 @@ with tab_timeseries:
 
     if not time_data.empty:
 
-                # =====================================
+        # =====================================
         # User-friendly county summary metrics
         # =====================================
         if len(selected_counties) > 0:
 
             summary_df = (
-                time_data.sort_values("ds")
+                time_data.sort_values("datetime")
                 .groupby("county_name_acs")
                 .last()
                 .reset_index()
@@ -463,14 +411,14 @@ with tab_timeseries:
         # =====================================
         fig_ts = px.line(
             time_data,
-            x="ds",
+            x="datetime",
             y="percent_change",
             color="county_name_acs",
             markers=True,
             hover_name="county_name_acs",
             hover_data={
                 "percent_change": ":.2f",
-                "ds": True
+                "datetime": True
             }
         )
 
@@ -504,7 +452,9 @@ with tab_table:
 
     st.header("Data Table")
 
-    table_df = df[df[date_col].isin(selected_dates)].copy()
+    table_df = df[
+        df["datetime"] == selected_datetime
+    ].copy()
 
     # Filter counties only if selected
     if len(selected_counties) > 0:
