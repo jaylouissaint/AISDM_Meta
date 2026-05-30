@@ -58,6 +58,11 @@ aggregation_options = {
     "Administrative Regions": "tk_facebook_pop_aggregated_admin.csv"
 }
 
+scatter_files = {
+    "Bing Tiles": "tk_facebook_pop_bing.csv",
+    "Administrative Regions": "tk_facebook_pop_admin.csv"
+}
+
 selected_aggregation = st.sidebar.selectbox(
     "Type of Aggregation",
     options=list(aggregation_options.keys())
@@ -77,6 +82,16 @@ def load_data(file_name):
 
 
 df = load_data(selected_file)
+
+scatter_df = load_data(scatter_files[selected_aggregation])
+
+scatter_df["ds"] = pd.to_datetime(scatter_df["ds"]).dt.normalize()
+
+scatter_df["hour"] = (
+    scatter_df["hour"]
+    .astype(str)
+    .str.zfill(4)
+)
 
 df["ds"] = pd.to_datetime(df["ds"]).dt.normalize()
 
@@ -194,6 +209,25 @@ def make_county_time_data(selected_counties):
     )
 
 # =========================
+# Scatterplot prep
+# =========================
+
+def create_scatter_data():
+
+    scatter_filtered = scatter_df[
+        scatter_df["ds"].isin(selected_dates)
+        & (scatter_df["hour"] == selected_hour)
+    ].copy()
+
+    # county filter
+    if len(selected_counties) > 0:
+        scatter_filtered = scatter_filtered[
+            scatter_filtered["county_name_acs"].isin(selected_counties)
+        ]
+
+    return scatter_filtered
+
+# =========================
 # Map plotting function
 # =========================
 # =========================
@@ -259,8 +293,13 @@ def create_map(plot_date):
 # =========================
 # Tabs
 # =========================
-tab_maps, tab_timeseries, tab_table = st.tabs(
-    ["Maps", "County Time Series", "Table"]
+tab_maps, tab_scatter, tab_timeseries, tab_table = st.tabs(
+    [
+        "Maps",
+        "Point Scatter",
+        "County Time Series",
+        "Table"
+    ]
 )
 
 # =========================
@@ -281,6 +320,64 @@ with tab_maps:
                 fig,
                 use_container_width=True
             )
+    
+        st.divider()
+
+# =========================
+# Scatterplot tab
+# =========================
+
+with tab_scatter:
+
+    st.header("Point-Level Population Change")
+
+    scatter_data = create_scatter_data()
+
+    st.caption(f"{len(scatter_data):,} rows")
+
+    if not scatter_data.empty:
+
+        scatter_data["date_label"] = (
+            pd.to_datetime(scatter_data["ds"])
+            .dt.strftime("%Y-%m-%d")
+        )
+
+        fig_scatter = px.scatter(
+            scatter_data,
+            x="longitude",
+            y="latitude",
+            color="percent_change",
+            size="n_crisis",
+            facet_col="date_label" if len(selected_dates) > 1 else None,
+            color_continuous_scale="RdBu_r",
+            range_color=(fill_min, fill_max),
+            hover_data={
+                "county_name_acs": True,
+                "county_state": True,
+                "percent_change": ":.2f",
+                "n_crisis": ":,.0f",
+                "n_baseline": ":,.0f"
+            }
+        )
+
+        fig_scatter.update_layout(
+            height=800,
+            margin=dict(l=0, r=0, t=40, b=0),
+            plot_bgcolor="white",
+            paper_bgcolor="white"
+        )
+
+
+
+        st.plotly_chart(
+            fig_scatter,
+            use_container_width=True
+        )
+
+    else:
+        st.warning(
+            "No rows available for the selected date/hour/county filters."
+        )
 
 # =========================
 # County time series tab
