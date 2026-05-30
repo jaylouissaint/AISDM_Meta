@@ -611,6 +611,7 @@ write_csv(
 ```
 
 ```{r}
+small_value = 1
 tk_facebook_pop_bing <- aggregate_csvs(
    path_parts = c("Data", "Tennessee_Kentucky", "Fern_Facebook_Pop_Crisis", "Bing_Tiles"),
    output_name = "tk_facebook_pop_bing.csv",
@@ -624,6 +625,10 @@ tk_facebook_pop_bing <- add_demographics(
    df = tk_facebook_pop_bing,
    geoid_col = "county_geoid"
  )
+tk_facebook_pop_bing <- tk_facebook_pop_bing |>
+  mutate(
+    percent_change = ((n_crisis - n_baseline) / (n_baseline + small_value)) * 100
+    )
 
 write_csv(
    tk_facebook_pop_bing,
@@ -645,6 +650,11 @@ tk_facebook_pop_admin <- add_demographics(
    df = tk_facebook_pop_admin,
    geoid_col = "county_geoid"
  )
+
+tk_facebook_pop_bing <- tk_facebook_pop_bing |>
+  mutate(
+    percent_change = ((n_crisis - n_baseline) / (n_baseline + small_value)) * 100
+    )
 
 write_csv(
    tk_facebook_pop_admin,
