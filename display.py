@@ -248,12 +248,13 @@ def create_map(plot_datetime):
 # =========================
 # Tabs
 # =========================
-tab_maps, tab_scatter, tab_timeseries, tab_table = st.tabs(
+tab_maps, tab_scatter, tab_timeseries, tab_table, tab_background = st.tabs(
     [
         "Maps",
         "Point Scatter",
         "County Time Series",
-        "Table"
+        "Tables",
+        "Background on Data"
     ]
 )
 
@@ -473,7 +474,7 @@ with tab_timeseries:
 # =========================
 with tab_table:
 
-    st.header("Data Table")
+    st.header("Aggregated Table")
 
     table_df = df.copy()
 
@@ -516,3 +517,56 @@ with tab_table:
     st.caption(
         f"{len(table_df):,} rows displayed"
     )
+
+    st.divider()
+
+
+        # Filter counties only if selected
+    if len(selected_counties) > 0:
+        st.header("Aggregated Table")
+
+        table2_df = scatter_df.copy()
+        table2_df = table2_df[
+            table2_df["county_name_acs"].isin(selected_counties)
+        ]
+        table2_df["county_name_acs"] = (
+            table2_df["county_name_acs"]
+            .cat.remove_unused_categories()
+        )
+
+        # Optional sorting
+        table2_df = table2_df.sort_values(
+            by=[date_col, "county_state", "county_name_acs"]
+        )
+
+        st.dataframe(
+            table2_df,
+            use_container_width=True,
+            column_config={
+            "county_geoid": "County GEOID",
+            "county_name_acs": "County Name",
+            "county_state": "State",
+            "percent_change": "Facebook Pop Change from Baseline (%)",
+            "ds": "Date",
+            "datetime": "Date and Time",
+            "hour": "Hour",
+            "n_crisis": "Facebook Population at Given Time",
+            "n_baseline": "Facebook Population at 45-day Baseline",
+            "total_population": "Total Population",
+            "median_income": "Median Household Income",
+            "poverty_rate": "Poverty Rate",
+            "pct_age_65_plus": "Age 65+ Population (%)",
+            "pct_no_vehicle": "Households Without Vehicle (%)",
+        }
+        )
+
+        st.caption(
+            f"{len(table2_df):,} rows displayed"
+        )
+
+
+# =========================
+# Background tab
+# =========================
+with tab_background:
+    st.header("Background on Data")
