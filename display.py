@@ -315,6 +315,21 @@ with tab_scatter:
 
     st.header("Subregion Population Change")
 
+    st.markdown(
+         """
+         The scatterplot below shows the subregion-level data points for the timestamp selected by the slider to the left. 
+         All subregions are shown by default, but you can filter for specific counties using the dropdown on the left.
+         Each point represents a subregion (i.e. Bing tile or administrative region, as chosen by the dropdown to the left) and is colored based on the percent change in Facebook population compared to baseline, which is calculated as:
+         """
+    )
+    st.latex(r'''PercentChange_{cw} = \frac{n_{crisis,cw} - n_{baseline,cw}}{n_{baseline,cw} + 1} \times 100''')
+    st.markdown(
+        """
+        where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the logic in the Meta documentation and prevents division by very small baseline values. $n_{baseline}$ is the Facebook population in that county during the 45-day baseline period, and $n_{crisis}$ is the Facebook population in that county during the selected date and hour. The color scale ranges from red (indicating a large decrease in population compared to baseline) to blue (indicating a large increase in population compared to baseline). Hovering over a county will show the county name, state, percent change, Facebook population at the given time, Facebook population at baseline, and total population according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs).
+        """
+    )
+
+
     scatter_data = create_scatter_data()
 
     st.caption(f"{len(scatter_data):,} rows")
