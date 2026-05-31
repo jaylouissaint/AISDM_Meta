@@ -286,6 +286,20 @@ with tab_maps:
 
     st.header("County-Level Population Change (%)")
 
+    st.markdown(
+        """
+        The map below displays county-level summaries for the timestamp selected by the slider to the left. Negative changes in red indicate counties with an average exodus occured at the time, and positive changes in blue indicate counties counties with a population influx at the time
+        The subregions (i.e. Bing tiles or administrative regions, as chosen by the dropdown to the left) are aggregated up to counties.
+        Each county is colored based on the percent change in Facebook population compared to the baseline, which is calculated as:
+        """)
+    st.latex(r'''PercentChange_{cw} = \frac{n_{crisis,cw} - n_{baseline,cw}}{n_{baseline,cw} + 1} \times 100''')
+    st.markdown(
+        """
+        where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the logic in the Meta documentation and prevents division by very small baseline values. $n_{baseline}$ is the Facebook population in that county during the 45-day baseline period, and $n_{crisis}$ is the Facebook population in that county during the selected date and hour. The color scale ranges from red (indicating a large decrease in population compared to baseline) to blue (indicating a large increase in population compared to baseline). Hovering over a county will show the county name, state, percent change, Facebook population at the given time, Facebook population at baseline, and total population according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs).
+        """
+    )
+                
+
     fig = create_map(selected_datetime)
 
     st.plotly_chart(
