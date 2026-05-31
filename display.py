@@ -17,8 +17,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("Winter Storm Fern - Interactive Situation Report")
-
+st.title("Winter Storm Fern")
 
 # =========================
 # Load spatial data
@@ -244,10 +243,21 @@ def create_map(plot_datetime):
 
 
 # =========================
+# Summary
+# =========================
+
+st.markdown(
+    """
+    A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the East Coast. Several states experienced network outages and extremely cold temperatures.  According to the [Weather Channel (2026)](https://weather.com/news/weather/news/2026-01-24-live-updates-winter-storm-fern-january-24), temperatures in Seagull, Minnesota and in Iron County, Wisconsin hit lows of -43 degrees and -41 degrees Fahrenheit, respectively. Emergency declarations were issued in several states --including Arkansas, Georgia, Indiana, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, South Carolina, Tennessee, Virginia, and West Virginia-- according to [Congressional Research Service (2026)](https://www.congress.gov/crs-product/IN12644). Power outages due to downed trees and ice occurred in Southern States, such as Texas, Louisiana, Mississippi, and Tennessee. States from Maine to New Mexico experienced significant snowfall, and sleet occurred in the Mid-Atlantic and Northeast. As of January 29th, there were up to 115 fatalities across 20 states after this winter storm, and approximately 2.5 million customers experienced power outages across the United states according to [Kothari (2026)](https://watchers.news/2026/01/29/over-100-fatalities-confirmed-after-major-january-2026-u-s-winter-storm/). Verisk, who are catastrophe risk modelling specialists, estimated a total of US \$4 billion in industry losses with 14 states, ranging from Massachusetts to Texas, that could each exceed \$50 million in insured losses according to [Evans (2026)](https://www.artemis.bm/news/verisk-estimates-winter-storm-fern-insured-losses-could-reach-4bn/).
+    """
+)
+
+# =========================
 # Tabs
 # =========================
-tab_maps, tab_scatter, tab_timeseries, tab_table, tab_background = st.tabs(
+tab_info, tab_maps, tab_scatter, tab_timeseries, tab_table, tab_background = st.tabs(
     [
+        "User Information",
         "Maps",
         "Subregions Plot",
         "County Time Series",
@@ -255,6 +265,19 @@ tab_maps, tab_scatter, tab_timeseries, tab_table, tab_background = st.tabs(
         "Background on Data"
     ]
 )
+
+# =========================
+# User Information tab
+# =========================
+with tab_info:
+    st.subheader("Interactive Situation Report")
+    st.markdown(
+        """
+        Toggle through the "Maps", "Subregions Plot" and "County Time Series" tabs to explore the data and use the widgets on the sidebar to filter the data and the plots. The "Tables" tab shows the data behind these plots, and the "Background on Data" tab provides more information about the data processing.
+
+        The following visualizations are developed based on Meta AI for Good's data through Facebook with a focus on Tennessee and Kentucky. The data covers population movement and population density change during the collection period of January 30 to February 12. These datasets use location activity from Facebook users or Facebook Business Pages to estimate how people, population density, network coverage, and business activity change during a crisis, so they do not represent the entire population in the area. Counts of people within a certain region are recorded at 8-hour intervals in this dataset. The counts during the crisis are compared to the counts at a baseline, which are the counts in the same region 45 days prior to data collection. These regions are either Bing tiles, what are about 6 x 6 city blocks, or administrative regions as determined by [GADM](https://gadm.org). These counts are aggregated to the county level for this analysis.
+        """
+    )
 
 # =========================
 # Maps tab
