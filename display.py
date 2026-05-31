@@ -386,6 +386,21 @@ with tab_timeseries:
 
     time_data = make_county_time_data(selected_counties)
 
+    st.markdown(
+        """
+        Each line in the chart below is the percent change in Facebook population compared to baseline for a county across the reporting windows during the data collection period. The reporting windows are 8-hour intervals that start at 3am EST, 11am EST and 7pm EST. Note that this is not necessarily the local time since some counties are in the Central Time Zone.
+        Hovering over a point will show more information about the county.
+        Use the dropdown on the left to filter for specific counties. This will also display some demographic information for the selected counties, according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs).
+        The percent change is calculated as:
+        """)
+    st.latex(r'''PercentChange_{cw} = \frac{n_{crisis,cw} - n_{baseline,cw}}{n_{baseline,cw} + 1} \times 100''')
+    st.markdown(
+        """
+        where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the logic in the Meta documentation and prevents division by very small baseline values. $n_{baseline}$ is the Facebook population in that county during the 45-day baseline period, and $n_{crisis}$ is the Facebook population in that county during the selected date and hour. The color scale ranges from red (indicating a large decrease in population compared to baseline) to blue (indicating a large increase in population compared to baseline).
+        """
+    )
+
+
     if not time_data.empty:
 
         # =====================================
