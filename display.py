@@ -474,7 +474,7 @@ with tab_timeseries:
 # =========================
 with tab_table:
 
-    st.header("Aggregated Table")
+    st.header("Aggregated at County Level Table")
 
     table_df = df.copy()
 
@@ -496,14 +496,11 @@ with tab_table:
     st.dataframe(
         table_df,
         use_container_width=True,
+        column_order=("county_name_acs", "datetime", "percent_change", "n_crisis", "n_baseline", "total_population", "median_income", "poverty_rate", "pct_age_65_plus", "pct_no_vehicle"),
         column_config={
-        "county_geoid": "County GEOID",
         "county_name_acs": "County Name",
-        "county_state": "State",
         "percent_change": "Facebook Pop Change from Baseline (%)",
-        "ds": "Date",
         "datetime": "Date and Time",
-        "hour": "Hour",
         "n_crisis": "Facebook Population at Given Time",
         "n_baseline": "Facebook Population at 45-day Baseline",
         "total_population": "Total Population",
@@ -523,7 +520,7 @@ with tab_table:
 
         # Filter counties only if selected
     if len(selected_counties) > 0:
-        st.header("Aggregated Table")
+        st.header("Subregion Table")
 
         table2_df = scatter_df.copy()
         table2_df = table2_df[
@@ -542,14 +539,11 @@ with tab_table:
         st.dataframe(
             table2_df,
             use_container_width=True,
+            column_order=("county_name_acs","latitude", "longitude", "datetime", "percent_change", "n_crisis", "n_baseline", "total_population", "median_income", "poverty_rate", "pct_age_65_plus", "pct_no_vehicle"),
             column_config={
-            "county_geoid": "County GEOID",
             "county_name_acs": "County Name",
-            "county_state": "State",
             "percent_change": "Facebook Pop Change from Baseline (%)",
-            "ds": "Date",
             "datetime": "Date and Time",
-            "hour": "Hour",
             "n_crisis": "Facebook Population at Given Time",
             "n_baseline": "Facebook Population at 45-day Baseline",
             "total_population": "Total Population",
@@ -557,6 +551,8 @@ with tab_table:
             "poverty_rate": "Poverty Rate",
             "pct_age_65_plus": "Age 65+ Population (%)",
             "pct_no_vehicle": "Households Without Vehicle (%)",
+            "latitude": "Latitude",
+            "longitude": "Longitude"
         }
         )
 
