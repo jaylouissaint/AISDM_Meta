@@ -313,6 +313,17 @@ with tab_scatter:
             }
         )
 
+        # Add black border around markers
+        fig_scatter.update_traces(
+            marker=dict(
+                line=dict(
+                    color="black",
+                    width=1
+                )
+            )
+        )
+
+
         fig_scatter.update_layout(
             title=pd.Timestamp(selected_datetime).strftime("%Y-%m-%d %I:%M %p"),
             height=800,
