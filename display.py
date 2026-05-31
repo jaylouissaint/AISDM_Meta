@@ -343,7 +343,7 @@ with tab_timeseries:
 
             summary_df = (
                 time_data.sort_values("datetime")
-                .groupby("county_name_acs")
+                .groupby("county_name_acs", observed=True)
                 .last()
                 .reset_index()
             )
@@ -450,9 +450,7 @@ with tab_table:
 
     st.header("Data Table")
 
-    table_df = df[
-        df["datetime"] == selected_datetime
-    ].copy()
+    table_df = df.copy()
 
     # Filter counties only if selected
     if len(selected_counties) > 0:
