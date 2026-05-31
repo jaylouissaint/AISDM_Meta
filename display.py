@@ -13,11 +13,11 @@ import json
 # Streamlit page settings
 # =========================
 st.set_page_config(
-    page_title="County Percent Change Maps",
+    page_title="Winter Storm Fern",
     layout="wide"
 )
 
-st.title("US County Percent Change Maps")
+st.title("Winter Storm Fern - Interactive Situation Report")
 
 
 # =========================
@@ -126,8 +126,6 @@ df["county_geoid"] = (
 date_col = "datetime"
 
 value_col = "percent_change"
-
-title_prefix = "Population Change (%)"
 
 # Convert date column
 df[date_col] = pd.to_datetime(df[date_col])
@@ -251,7 +249,7 @@ def create_map(plot_datetime):
 tab_maps, tab_scatter, tab_timeseries, tab_table, tab_background = st.tabs(
     [
         "Maps",
-        "Point Scatter",
+        "Subregions Plot",
         "County Time Series",
         "Tables",
         "Background on Data"
@@ -263,7 +261,7 @@ tab_maps, tab_scatter, tab_timeseries, tab_table, tab_background = st.tabs(
 # =========================
 with tab_maps:
 
-    st.header(title_prefix)
+    st.header("County-Level Population Change (%)")
 
     fig = create_map(selected_datetime)
 
@@ -278,7 +276,7 @@ with tab_maps:
 
 with tab_scatter:
 
-    st.header("Point-Level Population Change")
+    st.header("Subregion Population Change")
 
     scatter_data = create_scatter_data()
 
@@ -291,7 +289,7 @@ with tab_scatter:
             x="longitude",
             y="latitude",
             color="percent_change",
-            size="n_crisis",
+            size="n_baseline",
             color_continuous_scale="RdBu",
             hover_data={
                 "latitude": False,
@@ -348,7 +346,7 @@ with tab_scatter:
 # =========================
 with tab_timeseries:
 
-    st.header("County Time Series")
+    st.header("% Population Change Over Time")
 
     time_data = make_county_time_data(selected_counties)
 
@@ -454,7 +452,7 @@ with tab_timeseries:
         )
 
         fig_ts.update_layout(
-            title="County Percent Change Over Time",
+            title="% Population Change Over Time",
             xaxis_title="",
             yaxis_title="% Change vs Baseline",
             showlegend=False,  # removes legend
