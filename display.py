@@ -321,11 +321,10 @@ with tab_scatter:
                 "county_state": False,
                 "percent_change": ":.2f",
                 "n_crisis": ":,.0f",
-                "n_baseline": ":,.0f",
-                "total_population": ":,.0f"
+                "n_baseline": ":,.0f"
             },
             labels={
-                "county_name_acs": "County Name",
+                "county_name_acs": "County of Subregion",
                 "percent_change": "Facebook Pop Change from Baseline (%)",
                 "n_crisis": "Facebook Population at Given Time",
                 "n_baseline": "Facebook Population at 45-day Baseline",
@@ -560,18 +559,13 @@ with tab_table:
         st.dataframe(
             table2_df,
             use_container_width=True,
-            column_order=("county_name_acs","latitude", "longitude", "datetime", "percent_change", "n_crisis", "n_baseline", "total_population", "median_income", "poverty_rate", "pct_age_65_plus", "pct_no_vehicle"),
+            column_order=("county_name_acs","latitude", "longitude", "datetime", "percent_change", "n_crisis", "n_baseline"),
             column_config={
-            "county_name_acs": "County Name",
+            "county_name_acs": "County of Subregion",
             "percent_change": "Facebook Pop Change from Baseline (%)",
             "datetime": "Date and Time",
             "n_crisis": "Facebook Population at Given Time",
             "n_baseline": "Facebook Population at 45-day Baseline",
-            "total_population": "Total Population",
-            "median_income": "Median Household Income",
-            "poverty_rate": "Poverty Rate",
-            "pct_age_65_plus": "Age 65+ Population (%)",
-            "pct_no_vehicle": "Households Without Vehicle (%)",
             "latitude": "Latitude",
             "longitude": "Longitude"
         }
