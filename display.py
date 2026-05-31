@@ -225,7 +225,7 @@ def create_map(plot_datetime):
         locations="county_geoid",
         featureidkey="properties.county_geoid",
         color="percent_change",
-        color_continuous_scale="RdBu_r",
+        color_continuous_scale="RdBu",
         range_color=(fill_min, fill_max),
         hover_name="county_name_acs",
         hover_data={
