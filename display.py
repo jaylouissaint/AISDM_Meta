@@ -149,26 +149,7 @@ available_counties = sorted(df["county_name_acs"].dropna().unique())
 selected_counties = st.sidebar.multiselect(
     "Select counties",
     options=available_counties
-)
-
-
-# =========================
-# Compute global fill range
-# =========================
-all_summarized = df[
-    df["datetime"] == selected_datetime
-]
-
-
-fill_min = all_summarized["percent_change"].min()
-fill_max = all_summarized["percent_change"].max()
-
-# Center colormap at 0
-norm = TwoSlopeNorm(
-    vmin=fill_min,
-    vcenter=0,
-    vmax=fill_max
-)
+)no
 
 # =========================
 # County time series prep
