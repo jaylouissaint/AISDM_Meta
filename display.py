@@ -149,7 +149,7 @@ available_counties = sorted(df["county_name_acs"].dropna().unique())
 selected_counties = st.sidebar.multiselect(
     "Select counties",
     options=available_counties
-)no
+)
 
 # =========================
 # County time series prep
@@ -207,16 +207,21 @@ def create_map(plot_datetime):
         featureidkey="properties.county_geoid",
         color="percent_change",
         color_continuous_scale="RdBu",
-        range_color=(fill_min, fill_max),
         hover_name="county_name_acs",
         hover_data={
-            "county_state": True,
+            "county_state": False,
             "percent_change": ":.2f",
+            "n_crisis": ":,.0f",
+            "n_baseline": ":.0f",
+            "total_population": ":.0f",
             "county_geoid": False
         },
         labels={
             "county_state": "State",
-            "percent_change": "% Change"
+            "percent_change": "Facebook Pop Change from Baseline (%)",
+            "n_crisis": "Facebook Population at Given Time",
+            "n_baseline": "Facebook Population at 45-day Baseline",
+            "total_population": "Total Population"
         },
         mapbox_style="carto-positron",
         center={"lat": 36, "lon": -88},
@@ -282,13 +287,24 @@ with tab_scatter:
             color="percent_change",
             size="n_crisis",
             color_continuous_scale="RdBu_r",
-            range_color=(fill_min, fill_max),
             hover_data={
+                "latitude": False,
+                "longitude": False,
                 "county_name_acs": True,
-                "county_state": True,
+                "county_state": False,
                 "percent_change": ":.2f",
                 "n_crisis": ":,.0f",
-                "n_baseline": ":,.0f"
+                "n_baseline": ":,.0f",
+                "total_population": ":,.0f"
+            },
+            labels={
+                "county_name_acs": "County Name",
+                "percent_change": "Facebook Pop Change from Baseline (%)",
+                "n_crisis": "Facebook Population at Given Time",
+                "n_baseline": "Facebook Population at 45-day Baseline",
+                "total_population": "Total Population",
+                "latitude": "Latitude",
+                "longitude": "Longitude"
             }
         )
 
@@ -403,6 +419,14 @@ with tab_timeseries:
             hover_data={
                 "percent_change": ":.2f",
                 "datetime": True
+            },
+            labels={
+                "datetime": "Date and Time",
+                "county_name_acs": "County Name",
+                "percent_change": "Facebook Pop Change from Baseline (%)",
+                "n_crisis": "Facebook Population at Given Time",
+                "n_baseline": "Facebook Population at 45-day Baseline",
+                "total_population": "Total Population"
             }
         )
 
