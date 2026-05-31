@@ -587,3 +587,26 @@ with tab_table:
 # =========================
 with tab_background:
     st.header("Background on Data")
+
+    st.markdown(
+        """
+        The Facebook data used in this report comes from Meta’s Data for Good crisis datasets. In plain terms, these datasets use location activity from Facebook users or Facebook business Pages to estimate how people, population density, network coverage, and business activity change during a crisis. The data does not represent everyone in the affected area. For population and movement datasets, it only represents Facebook app users who have Location Services enabled. For business activity, it represents qualifying Facebook business Pages with enough activity to be included while preserving privacy. 
+
+        The data is constructed by comparing what is observed during the crisis period to what was typical before the crisis. For example, population density during the storm is compared to a pre-crisis baseline of 45-days prior to data collection. Movement during the storm is compared to normal movement patterns between the same places before the event. Business activity is compared to normal posting behavior from business pages before the crisis. Because the data is relative to a baseline, the main signal is not the raw count itself, but whether a place is above or below its pre-crisis level.
+
+        Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time. This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, the reported time windows are still based on Pacific Time, which should be kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
+        Some rows have missing values for `n_baseline` or `n_crisis` because of Meta’s privacy protections around small counts. To avoid dropping these rows entirely, missing `n_baseline` values are imputed as 3 and missing `n_crisis` values are imputed as 9.
+
+        After imputation, observations are summarized by county and reporting window. Because the data may include multiple observations within a single day, the reporting window is defined using both the date and the time-window information available in the data. For each county-window pair, the baseline counts are summed across all Bing tile observations in that county and reporting window, and the crisis counts are summed across those same observations. The county-window percent change is then calculated as:
+        """
+    )
+    st.latex(r'''PercentChange_{cw} = \frac{n_{crisis,cw} - n_{baseline,cw}}{n_{baseline,cw} + 1} \times 100''')
+    st.markdown(
+        """
+        where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the logic in the Meta documentation and prevents division by very small baseline values.
+
+        In addition to the Meta crisis datasets, county-level demographic data was added from the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs). This demographic data was incorporated with the use of the [`tidycensus`](https://walker-data.com/tidycensus/) package. This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
+
+        The demographic data is joined using `county_geoid`, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
+        """
+    )   
