@@ -182,7 +182,12 @@ def make_county_time_data(selected_counties):
     if len(selected_counties) > 0:
         filtered_df = filtered_df[
             filtered_df["county_name_acs"].isin(selected_counties)
-        ]
+        ].copy()
+        filtered_df["county_name_acs"] = (
+            filtered_df["county_name_acs"]
+            .cat.remove_unused_categories()
+        )
+
 
     return filtered_df
 
@@ -457,6 +462,10 @@ with tab_table:
         table_df = table_df[
             table_df["county_name_acs"].isin(selected_counties)
         ]
+        table_df["county_name_acs"] = (
+            table_df["county_name_acs"]
+            .cat.remove_unused_categories()
+        )
 
     # Optional sorting
     table_df = table_df.sort_values(
