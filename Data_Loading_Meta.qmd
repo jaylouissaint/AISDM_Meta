@@ -651,7 +651,7 @@ tk_facebook_pop_admin <- add_demographics(
    geoid_col = "county_geoid"
  )
 
-tk_facebook_pop_bing <- tk_facebook_pop_bing |>
+tk_facebook_pop_admin <- tk_facebook_pop_admin |>
   mutate(
     percent_change = ((n_crisis - n_baseline) / (n_baseline + small_value)) * 100
     )
