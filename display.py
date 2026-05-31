@@ -195,9 +195,9 @@ def create_scatter_data():
 # =========================
 # Interactive map plotting
 # =========================
-import time
+
 def create_map(plot_datetime):
-    start = time.time()
+
     latest_county = get_map_data(df, selected_datetime)
 
     fig = px.choropleth_mapbox(
@@ -233,9 +233,6 @@ def create_map(plot_datetime):
         margin={"r": 0, "t": 40, "l": 0, "b": 0},
         height=700
     )
-
-    end = time.time()
-    print(f"Map creation time: {end - start:.2f} seconds")
 
     return fig
 
@@ -309,6 +306,7 @@ with tab_scatter:
         )
 
         fig_scatter.update_layout(
+            title=pd.Timestamp(selected_datetime).strftime("%Y-%m-%d %I:%M %p"),
             height=800,
             margin=dict(l=0, r=0, t=40, b=0)
         )
