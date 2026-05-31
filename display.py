@@ -119,7 +119,7 @@ date_col = "datetime"
 
 value_col = "percent_change"
 
-title_prefix = "Population Density Change (%)"
+title_prefix = "Population Change (%)"
 
 # Convert date column
 df[date_col] = pd.to_datetime(df[date_col])
