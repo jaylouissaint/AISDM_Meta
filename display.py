@@ -286,7 +286,7 @@ with tab_scatter:
             y="latitude",
             color="percent_change",
             size="n_crisis",
-            color_continuous_scale="RdBu_r",
+            color_continuous_scale="RdBu",
             hover_data={
                 "latitude": False,
                 "longitude": False,
@@ -310,9 +310,7 @@ with tab_scatter:
 
         fig_scatter.update_layout(
             height=800,
-            margin=dict(l=0, r=0, t=40, b=0),
-            plot_bgcolor="white",
-            paper_bgcolor="white"
+            margin=dict(l=0, r=0, t=40, b=0)
         )
 
 
