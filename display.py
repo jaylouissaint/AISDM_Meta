@@ -479,7 +479,23 @@ with tab_table:
 
     st.dataframe(
         table_df,
-        use_container_width=True
+        use_container_width=True,
+        column_config={
+        "county_geoid": "County GEOID",
+        "county_name_acs": "County Name",
+        "county_state": "State",
+        "percent_change": "Facebook Pop Change from Baseline (%)",
+        "ds": "Date",
+        "datetime": "Date and Time",
+        "hour": "Hour",
+        "n_crisis": "Facebook Population at Given Time",
+        "n_baseline": "Facebook Population at 45-day Baseline",
+        "total_population": "Total Population",
+        "median_income": "Median Household Income",
+        "poverty_rate": "Poverty Rate",
+        "pct_age_65_plus": "Age 65+ Population (%)",
+        "pct_no_vehicle": "Households Without Vehicle (%)",
+    }
     )
 
     st.caption(
