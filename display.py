@@ -94,14 +94,22 @@ df = load_data(selected_file)
 
 scatter_df = load_data(scatter_files[selected_aggregation])
 
-df["datetime"] = pd.to_datetime(
-    df["ds"].astype(str) + " " + df["hour"].astype(str).str.zfill(4),
-    format="%Y-%m-%d %H%M"
+df["datetime"] = (
+    pd.to_datetime(
+        df["ds"].astype(str) + " " + df["hour"].astype(str).str.zfill(4),
+        format="%Y-%m-%d %H%M"
+    )
+    .dt.tz_localize("America/Los_Angeles")
+    .dt.tz_convert("America/New_York")
 )
 
-scatter_df["datetime"] = pd.to_datetime(
-    scatter_df["ds"].astype(str) + " " + scatter_df["hour"].astype(str).str.zfill(4),
-    format="%Y-%m-%d %H%M"
+scatter_df["datetime"] = (
+    pd.to_datetime(
+        scatter_df["ds"].astype(str) + " " + scatter_df["hour"].astype(str).str.zfill(4),
+        format="%Y-%m-%d %H%M"
+    )
+    .dt.tz_localize("America/Los_Angeles")
+    .dt.tz_convert("America/New_York")
 )
 counties_sf["county_geoid"] = (
     counties_sf["county_geoid"]
