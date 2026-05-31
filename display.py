@@ -540,6 +540,14 @@ with tab_table:
 
     st.header("Aggregated at County Level Table")
 
+    st.markdown(
+        """
+        The table below shows the county-level data points for the timestamp selected by the slider to the left using the subregions selected by the dropdown on the left. Hover over the columns to see the definitions of each variable.
+        All counties are shown by default, but you can filter for specific counties using the dropdown on the left.
+        When you filter for counties, you will also see the subregion-level data table, which shows the data points for the subregions within the selected counties, below the county-level table.
+        """
+    )
+
     table_df = df.copy()
 
     # Filter counties only if selected
@@ -562,16 +570,36 @@ with tab_table:
         use_container_width=True,
         column_order=("county_name_acs", "datetime", "percent_change", "n_crisis", "n_baseline", "total_population", "median_income", "poverty_rate", "pct_age_65_plus", "pct_no_vehicle"),
         column_config={
-        "county_name_acs": "County Name",
-        "percent_change": "Facebook Pop Change from Baseline (%)",
-        "datetime": "Date and Time",
-        "n_crisis": "Facebook Population at Given Time",
-        "n_baseline": "Facebook Population at 45-day Baseline",
-        "total_population": "Total Population",
-        "median_income": "Median Household Income",
-        "poverty_rate": "Poverty Rate",
-        "pct_age_65_plus": "Age 65+ Population (%)",
-        "pct_no_vehicle": "Households Without Vehicle (%)",
+        "county_name_acs":st.column_config.Column(
+            "County", 
+            help = "**Definition**: County name and state"),
+        "percent_change": st.column_config.Column(
+            "Facebook Pop Change from Baseline (%)",
+            help = "**Definition**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)"),
+        "datetime": st.column_config.Column(
+            "Date and Time",
+            help = "**Definition**: The date and time in Eastern Time Zone"),
+        "n_crisis": st.column_config.Column(
+            "Facebook Population at Given Time",
+            help = "**Definition**: The number of Facebook Location Services-enabled users at the given date and time"),
+        "n_baseline": st.column_config.Column(
+            "Facebook Population at 45-day Baseline",
+            help = "**Definition**: The number of Facebook Location Services-enabled users at the 45-day baseline"),
+        "total_population": st.column_config.Column(
+            "Total Population",
+            help = "**Definition**: The total population of the county according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
+        "median_income": st.column_config.Column(
+            "Median Household Income",
+            help = "**Definition**: The median household income of the county  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
+        "poverty_rate": st.column_config.Column(
+            "Poverty Rate",
+            help = "**Definition**: The percentage of the population living below the poverty line  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
+        "pct_age_65_plus": st.column_config.Column(
+            "Age 65+ Population (%)",
+            help = "**Definition**: The percentage of the population that is 65 years or older  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
+        "pct_no_vehicle": st.column_config.Column(
+            "Households Without Vehicle (%)",
+            help = "**Definition**: The percentage of households that do not have a vehicle  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)")
     }
     )
 
@@ -585,7 +613,11 @@ with tab_table:
         # Filter counties only if selected
     if len(selected_counties) > 0:
         st.header("Subregion Table")
-
+        st.markdown(
+            """
+            The table below shows the subregion-level data points for the timestamp selected by the slider to the left using the subregions selected by the dropdown on the left. Hover over the columns to see the definitions of each variable.
+            """
+        )
         table2_df = scatter_df.copy()
         table2_df = table2_df[
             table2_df["county_name_acs"].isin(selected_counties)
@@ -605,13 +637,27 @@ with tab_table:
             use_container_width=True,
             column_order=("county_name_acs","latitude", "longitude", "datetime", "percent_change", "n_crisis", "n_baseline"),
             column_config={
-            "county_name_acs": "County of Subregion",
-            "percent_change": "Facebook Pop Change from Baseline (%)",
-            "datetime": "Date and Time",
-            "n_crisis": "Facebook Population at Given Time",
-            "n_baseline": "Facebook Population at 45-day Baseline",
-            "latitude": "Latitude",
-            "longitude": "Longitude"
+            "county_name_acs": st.column_config.Column(
+            "County of Subregion", 
+            help = "**Definition**: the corresponding county name and state of the subregion"),
+            "percent_change": st.column_config.Column(
+            "Facebook Pop Change from Baseline (%)",
+            help = "**Definition**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)"),
+        "datetime": st.column_config.Column(
+            "Date and Time",
+            help = "**Definition**: The date and time in Eastern Time Zone"),
+        "n_crisis": st.column_config.Column(
+            "Facebook Population at Given Time",
+            help = "**Definition**: The number of Facebook Location Services-enabled users at the given date and time"),
+        "n_baseline": st.column_config.Column(
+            "Facebook Population at 45-day Baseline",
+            help = "**Definition**: The number of Facebook Location Services-enabled users at the 45-day baseline"),
+        "latitude": st.column_config.Column(
+            "Latitude",
+            help = "**Definition**: The latitude of the centroid of the subregion (i.e. Bing tile or administrative region)"),
+        "longitude": st.column_config.Column(
+            "Longitude",
+            help = "**Definition**: The longitude of the centroid of the subregion (i.e. Bing tile or administrative region)")
         }
         )
 
