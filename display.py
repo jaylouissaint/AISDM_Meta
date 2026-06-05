@@ -629,6 +629,10 @@ with tab_table:
         by=[date_col, "county_state", "county_name_acs"]
     )
 
+    table_df["poverty_rate"] *= 100
+    table_df["pct_age_65_plus"] *= 100
+    table_df["pct_no_vehicle"] *= 100
+
     st.dataframe(
         table_df,
         use_container_width=True,
@@ -637,32 +641,40 @@ with tab_table:
         "county_name_acs":st.column_config.Column(
             "County", 
             help = "**Definition**: County name and state"),
-        "percent_change": st.column_config.Column(
+        "percent_change": st.column_config.NumberColumn(
             "Facebook Pop Change from Baseline (%)",
+            format="%.1f%%",
             help = "**Definition**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)"),
         "datetime_display": st.column_config.Column(
             "Date and Time",
             help = "**Definition**: The date and time in Eastern Time Zone"),
-        "n_crisis": st.column_config.Column(
+        "n_crisis": st.column_config.NumberColumn(
             "Facebook Population at Given Time",
+            format="%.1f",
             help = "**Definition**: The number of Facebook Location Services-enabled users at the given date and time"),
-        "n_baseline": st.column_config.Column(
+        "n_baseline": st.column_config.NumberColumn(
             "Facebook Population at 45-day Baseline",
+            format="%.1f",
             help = "**Definition**: The number of Facebook Location Services-enabled users at the 45-day baseline"),
-        "total_population": st.column_config.Column(
+        "total_population": st.column_config.NumberColumn(
             "Total Population",
+            format="%.1f",
             help = "**Definition**: The total population of the county according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
-        "median_income": st.column_config.Column(
+        "median_income": st.column_config.NumberColumn(
             "Median Household Income",
+            format="%.1f",
             help = "**Definition**: The median household income of the county  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
-        "poverty_rate": st.column_config.Column(
+        "poverty_rate": st.column_config.NumberColumn(
             "Poverty Rate",
+            format="%.1f%%",
             help = "**Definition**: The percentage of the population living below the poverty line  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
-        "pct_age_65_plus": st.column_config.Column(
+        "pct_age_65_plus": st.column_config.NumberColumn(
             "Age 65+ Population (%)",
+            format="%.1f%%",
             help = "**Definition**: The percentage of the population that is 65 years or older  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
-        "pct_no_vehicle": st.column_config.Column(
+        "pct_no_vehicle": st.column_config.NumberColumn(
             "Households Without Vehicle (%)",
+            format="%.1f%%",
             help = "**Definition**: The percentage of households that do not have a vehicle  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)")
     }
     )
@@ -711,24 +723,29 @@ with tab_table:
             "county_name_acs": st.column_config.Column(
             "County of Subregion", 
             help = "**Definition**: the corresponding county name and state of the subregion"),
-            "percent_change": st.column_config.Column(
+            "percent_change": st.column_config.NumberColumn(
             "Facebook Pop Change from Baseline (%)",
+            format="%.1f%%",
             help = "**Definition**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)"),
         "datetime_display": st.column_config.Column(
             "Date and Time",
             help = "**Definition**: The date and time in Eastern Time Zone"),
-        "n_crisis": st.column_config.Column(
+        "n_crisis": st.column_config.NumberColumn(
             "Facebook Population at Given Time",
+            format="%.1f",
             help = "**Definition**: The number of Facebook Location Services-enabled users at the given date and time"),
-        "n_baseline": st.column_config.Column(
+        "n_baseline": st.column_config.NumberColumn(
             "Facebook Population at 45-day Baseline",
+            format="%.1f",
             help = "**Definition**: The number of Facebook Location Services-enabled users at the 45-day baseline"),
-        "latitude": st.column_config.Column(
+        "latitude": st.column_config.NumberColumn(
             "Latitude",
+            format="%.1f",
             help = "**Definition**: The latitude of the centroid of the subregion (i.e. Bing tile)"),
-        "longitude": st.column_config.Column(
+        "longitude": st.column_config.NumberColumn(
             "Longitude",
-            help = "**Definition**: The longitude of the centroid of the subregion (i.e. Bing tile)")
+            format="%.1f",
+            help = "**Definition**: The longitude of the centroid of the subregion (i.e. Bing tile)"),
         }
         )
 
@@ -788,4 +805,4 @@ with tab_background:
         names alone are not unique across states. For example, many states have counties with the same name, but each county has
         a unique GEOID.
         """
-    )   
+    )
