@@ -629,9 +629,7 @@ with tab_table:
         by=[date_col, "county_state", "county_name_acs"]
     )
 
-    table_df["poverty_rate"] *= 100
-    table_df["pct_age_65_plus"] *= 100
-    table_df["pct_no_vehicle"] *= 100
+    table_df["percent_change"] /= 100
 
     st.dataframe(
         table_df,
@@ -643,38 +641,38 @@ with tab_table:
             help = "**Definition**: County name and state"),
         "percent_change": st.column_config.NumberColumn(
             "Facebook Pop Change from Baseline (%)",
-            format="%.1f%%",
+            format="percent",
             help = "**Definition**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)"),
         "datetime_display": st.column_config.Column(
             "Date and Time",
             help = "**Definition**: The date and time in Eastern Time Zone"),
         "n_crisis": st.column_config.NumberColumn(
             "Facebook Population at Given Time",
-            format="%.1f",
+            format="accounting",
             help = "**Definition**: The number of Facebook Location Services-enabled users at the given date and time"),
         "n_baseline": st.column_config.NumberColumn(
             "Facebook Population at 45-day Baseline",
-            format="%.1f",
+            format="accounting",
             help = "**Definition**: The number of Facebook Location Services-enabled users at the 45-day baseline"),
         "total_population": st.column_config.NumberColumn(
             "Total Population",
-            format="%.1f",
+            format="accounting",
             help = "**Definition**: The total population of the county according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
         "median_income": st.column_config.NumberColumn(
             "Median Household Income",
-            format="%.1f",
+            format="dollar",
             help = "**Definition**: The median household income of the county  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
         "poverty_rate": st.column_config.NumberColumn(
             "Poverty Rate",
-            format="%.1f%%",
+            format="percent",
             help = "**Definition**: The percentage of the population living below the poverty line  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
         "pct_age_65_plus": st.column_config.NumberColumn(
             "Age 65+ Population (%)",
-            format="%.1f%%",
+            format="percent",
             help = "**Definition**: The percentage of the population that is 65 years or older  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)"),
         "pct_no_vehicle": st.column_config.NumberColumn(
             "Households Without Vehicle (%)",
-            format="%.1f%%",
+            format="percent",
             help = "**Definition**: The percentage of households that do not have a vehicle  according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs)")
     }
     )
@@ -715,6 +713,8 @@ with tab_table:
             by=[date_col, "county_state", "county_name_acs"]
         )
 
+        table2_df["percent_change"] /= 100
+
         st.dataframe(
             table2_df,
             use_container_width=True,
@@ -725,18 +725,18 @@ with tab_table:
             help = "**Definition**: the corresponding county name and state of the subregion"),
             "percent_change": st.column_config.NumberColumn(
             "Facebook Pop Change from Baseline (%)",
-            format="%.1f%%",
+            format="percent",
             help = "**Definition**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)"),
         "datetime_display": st.column_config.Column(
             "Date and Time",
             help = "**Definition**: The date and time in Eastern Time Zone"),
         "n_crisis": st.column_config.NumberColumn(
             "Facebook Population at Given Time",
-            format="%.1f",
+            format="accounting",
             help = "**Definition**: The number of Facebook Location Services-enabled users at the given date and time"),
         "n_baseline": st.column_config.NumberColumn(
             "Facebook Population at 45-day Baseline",
-            format="%.1f",
+            format="accounting",
             help = "**Definition**: The number of Facebook Location Services-enabled users at the 45-day baseline"),
         "latitude": st.column_config.NumberColumn(
             "Latitude",
