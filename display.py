@@ -52,22 +52,24 @@ counties_sf, states_sf = load_spatial_data()
 # =========================
 OUTPUTS_DIR = Path("./outputs")
 
-aggregation_options = {
-    "Bing Tiles": "tk_facebook_pop_aggregated_bing.parquet",
-    "Administrative Regions": "tk_facebook_pop_aggregated_admin.parquet"
-}
+# aggregation_options = {
+#     "Bing Tiles": "tk_facebook_pop_aggregated_bing.parquet",
+#     "Administrative Regions": "tk_facebook_pop_aggregated_admin.parquet"
+# }
 
-scatter_files = {
-    "Bing Tiles": "tk_facebook_pop_bing.parquet",
-    "Administrative Regions": "tk_facebook_pop_admin.parquet"
-}
+# scatter_files = {
+#     "Bing Tiles": "tk_facebook_pop_bing.parquet",
+#     "Administrative Regions": "tk_facebook_pop_admin.parquet"
+# }
 
-selected_aggregation = st.sidebar.selectbox(
-    "Type of Aggregation",
-    options=list(aggregation_options.keys())
-)
+# selected_aggregation = st.sidebar.selectbox(
+#     "Type of Aggregation",
+#     options=list(aggregation_options.keys())
+# )
 
-selected_file = aggregation_options[selected_aggregation]
+# selected_file = aggregation_options[selected_aggregation]
+
+selected_file = "tk_facebook_pop_aggregated_bing.parquet"
 
 # =========================
 # Create the GeoJSON
@@ -91,7 +93,9 @@ def load_data(file_name):
 
 df = load_data(selected_file)
 
-scatter_df = load_data(scatter_files[selected_aggregation])
+#scatter_df = load_data(scatter_files[selected_aggregation])
+
+scatter_df = load_data("tk_facebook_pop_bing.parquet")
 
 df["datetime"] = (
     pd.to_datetime(
