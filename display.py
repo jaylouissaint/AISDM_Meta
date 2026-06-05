@@ -214,6 +214,7 @@ def create_map(plot_datetime):
         featureidkey="properties.county_geoid",
         color="percent_change",
         color_continuous_scale="RdBu",
+        color_continuous_midpoint=0,
         hover_name="county_name_acs",
         hover_data={
             "county_state": False,
@@ -383,6 +384,7 @@ with tab_scatter:
             color="percent_change",
             size="n_baseline",
             color_continuous_scale="RdBu",
+            color_continuous_midpoint=0,
             hover_data={
                 "latitude": False,
                 "longitude": False,
