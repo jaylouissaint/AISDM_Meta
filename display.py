@@ -114,6 +114,7 @@ scatter_df["datetime"] = (
     .dt.tz_localize("America/Los_Angeles")
     .dt.tz_convert("America/New_York")
 )
+
 counties_sf["county_geoid"] = (
     counties_sf["county_geoid"]
     .astype(str)
@@ -130,9 +131,6 @@ date_col = "datetime"
 
 value_col = "percent_change"
 
-# Convert date column
-df[date_col] = pd.to_datetime(df[date_col])
-
 
 @st.cache_data
 def get_map_data(df, dt):
@@ -147,7 +145,7 @@ selected_datetime = st.sidebar.select_slider(
     "Select date and hour",
     options=available_datetimes,
     value=available_datetimes[-1],
-    format_func=lambda x: pd.Timestamp(x).strftime("%Y-%m-%d %I:%M %p")
+    format_func=lambda x: x.strftime("%Y-%m-%d %I:%M %p %Z")
 )
 
 # =========================
@@ -238,7 +236,7 @@ def create_map(plot_datetime):
     )
 
     fig.update_layout(
-        title=pd.Timestamp(plot_datetime).strftime("%Y-%m-%d %I:%M %p"),
+        title=plot_datetime.strftime("%Y-%m-%d %I:%M %p %Z"),
         margin={"r": 0, "t": 40, "l": 0, "b": 0},
         height=700
     )
@@ -417,7 +415,7 @@ with tab_scatter:
 
 
         fig_scatter.update_layout(
-            title=pd.Timestamp(selected_datetime).strftime("%Y-%m-%d %I:%M %p"),
+            title=selected_datetime.strftime("%Y-%m-%d %I:%M %p %Z"),
             height=800,
             margin=dict(l=0, r=0, t=40, b=0)
         )
@@ -442,6 +440,11 @@ with tab_timeseries:
     st.header("% Population Change Over Time")
 
     time_data = make_county_time_data(selected_counties)
+
+    time_data["datetime_display"] = (
+        time_data["datetime"]
+        .dt.strftime("%Y-%m-%d %I:%M %p %Z")
+    )
 
     st.markdown(
         """
@@ -549,10 +552,11 @@ with tab_timeseries:
             hover_name="county_name_acs",
             hover_data={
                 "percent_change": ":.2f",
-                "datetime": True
+                "datetime_display": True,
+                "datetime": False
             },
             labels={
-                "datetime": "Date and Time",
+                "datetime_display": "Date and Time",
                 "county_name_acs": "County Name",
                 "percent_change": "Facebook Pop Change from Baseline (%)",
                 "n_crisis": "Facebook Population at Given Time",
@@ -603,6 +607,11 @@ with tab_table:
 
     table_df = df.copy()
 
+    table_df["datetime_display"] = (
+        table_df["datetime"]
+        .dt.strftime("%Y-%m-%d %I:%M %p %Z")
+    )
+
     # Filter counties only if selected
     if len(selected_counties) > 0:
         table_df = table_df[
@@ -621,7 +630,7 @@ with tab_table:
     st.dataframe(
         table_df,
         use_container_width=True,
-        column_order=("county_name_acs", "datetime", "percent_change", "n_crisis", "n_baseline", "total_population", "median_income", "poverty_rate", "pct_age_65_plus", "pct_no_vehicle"),
+        column_order=("county_name_acs", "datetime_display", "percent_change", "n_crisis", "n_baseline", "total_population", "median_income", "poverty_rate", "pct_age_65_plus", "pct_no_vehicle"),
         column_config={
         "county_name_acs":st.column_config.Column(
             "County", 
@@ -629,7 +638,7 @@ with tab_table:
         "percent_change": st.column_config.Column(
             "Facebook Pop Change from Baseline (%)",
             help = "**Definition**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)"),
-        "datetime": st.column_config.Column(
+        "datetime_display": st.column_config.Column(
             "Date and Time",
             help = "**Definition**: The date and time in Eastern Time Zone"),
         "n_crisis": st.column_config.Column(
@@ -673,6 +682,12 @@ with tab_table:
             """
         )
         table2_df = scatter_df.copy()
+
+        table2_df["datetime_display"] = (
+            table2_df["datetime"]
+            .dt.strftime("%Y-%m-%d %I:%M %p %Z")
+        )
+
         table2_df = table2_df[
             table2_df["county_name_acs"].isin(selected_counties)
         ]
@@ -689,7 +704,7 @@ with tab_table:
         st.dataframe(
             table2_df,
             use_container_width=True,
-            column_order=("county_name_acs","latitude", "longitude", "datetime", "percent_change", "n_crisis", "n_baseline"),
+            column_order=("county_name_acs","latitude", "longitude", "datetime_display", "percent_change", "n_crisis", "n_baseline"),
             column_config={
             "county_name_acs": st.column_config.Column(
             "County of Subregion", 
@@ -697,7 +712,7 @@ with tab_table:
             "percent_change": st.column_config.Column(
             "Facebook Pop Change from Baseline (%)",
             help = "**Definition**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline (plus a small value, usually 1)"),
-        "datetime": st.column_config.Column(
+        "datetime_display": st.column_config.Column(
             "Date and Time",
             help = "**Definition**: The date and time in Eastern Time Zone"),
         "n_crisis": st.column_config.Column(
