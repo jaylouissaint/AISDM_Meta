@@ -33,12 +33,145 @@ This report uses Meta Population During Crisis data to measure changes in popula
 The findings indicate that population changes were not evenly distributed across affected areas. While many counties remained near normal population levels, a smaller number experienced substantial and sustained departures from baseline conditions.
 
 ## Where Did Population Changes Occur?
+
+```{r}
+# Get US county boundaries
+options(tigris_use_cache = TRUE)
+counties_sf <- counties(cb = TRUE, year = 2023) |>
+  st_transform(4326) |>
+  select(
+    county_state = STATE_NAME,
+    county_name = NAME,
+    county_geoid = GEOID,
+    geometry
+  )
+
+# State boundaries
+states_sf <- tigris::states(cb = TRUE, year = 2023) |>
+  st_transform(4326) |>
+  select(
+    state_name = NAME,
+    geometry
+  )
+library(tidyverse)
+library(sf)
+library(patchwork)  # For arranging plots
+library(scales)     # For squish
+
+make_percent_change_map <- function(file_name,
+                                    date_col = "ds",
+                                    value_col = "percent_change",
+                                    selected_date = NULL,
+                                    selected_hour = NULL,
+                                    output_plot_name = NULL,
+                                    title_prefix = "Population Density Change (%)") {
+  
+  # Read file
+  df <- read_csv(
+    here("outputs", file_name),
+    show_col_types = FALSE
+  )
+  
+  # Determine which dates to use
+  if (is.null(selected_date)) {
+    plot_dates <- max(df[[date_col]], na.rm = TRUE)
+  } else {
+    if (!all(selected_date %in% df[[date_col]])) {
+      stop("One or more selected_date values are not available in the data.")
+    }
+    plot_dates <- selected_date
+  }
+  
+ # Compute global fill range using the summarized county-level data
+  all_summarized <- df |>
+    filter(paste(.data[[date_col]], hour) %in% paste(plot_dates, selected_hour))
+  
+  fill_range <- all_summarized |>
+    summarise(min_val = min(percent_change, na.rm = TRUE),
+              max_val = max(percent_change, na.rm = TRUE))
+  
+  # Function to create a single map
+  create_map <- function(plot_date_time) {
+    latest_county <- df |>
+      filter(paste(.data[[date_col]], hour) %in% plot_date_time)
+    
+    map_data <- counties_sf |>
+      inner_join(latest_county, by = "county_geoid")
+    
+    county_bbox <- st_bbox(map_data)
+    relevant_states <- states_sf |>
+      st_filter(map_data, .predicate = st_intersects)
+    
+    plot_date <- gsub("0000", "12am PST",plot_date_time)
+    plot_date <- gsub("0800", "8am PST",plot_date)
+    plot_date <- gsub("1600", "4pm PST",plot_date)
+    
+    ggplot() +
+      geom_sf(data = map_data, aes(fill = percent_change), linewidth = 0.2) +
+      geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +
+      scale_fill_gradientn(
+          colours = c("red", "white", "blue"),
+          values = scales::rescale(c(
+            fill_range$min_val,  # -5
+            0,
+            fill_range$max_val   # 75
+          )),
+          limits = c(fill_range$min_val, fill_range$max_val),
+          oob = squish,
+          labels = label_number(suffix = "%", accuracy = 1)
+        ) +
+      labs(
+        title = plot_date,
+        fill = "% Change vs Baseline"
+      ) +
+      coord_sf(
+        xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
+        ylim = c(county_bbox["ymin"], county_bbox["ymax"])
+      ) +
+      theme_minimal()
+  }
+
+  # Create plots
+  
+  plots <- lapply(paste(plot_dates, selected_hour), create_map)
+  
+  # Combine plots side-by-side with shared legend
+  if (length(plots) == 1) {
+    combined_plot <- plots[[1]] +
+      ggtitle(paste(title_prefix, plots[[1]]$labels$title))
+  } else {
+    combined_plot <- wrap_plots(plots, ncol = length(plots), guides = "collect") &
+      theme(legend.position = "bottom")
+    
+    # Shared title
+    combined_plot <- combined_plot + plot_annotation(
+    title = title_prefix,
+    theme = theme(
+      plot.title = element_text(hjust = 0.5)  # centers the title
+    )
+  )
+  }
+  
+  # Save if requested
+  if (!is.null(output_plot_name)) {
+    ggsave(
+      filename = here("outputs", output_plot_name),
+      plot = combined_plot,
+      width = ifelse(length(plot_dates) == 2, 16, 10),
+      height = 7
+    )
+  }
+  
+  return(combined_plot)
+}
+```
+
 ```{r fig-pop-bing, fig.cap = "When showing population density change with Bing tiles, there is little negative changes at these two dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
   selected_hour = c("0000", "1600"),
-  title_prefix = "Population Density Change (%) - Bing Tiles"
+  title_prefix = "Population Change (%) - Bing Tiles"
 )
 ```
 
@@ -50,7 +183,7 @@ The map highlights substantial variation in population change across affected co
 
 - There is little visible negative population-density change.
 
-- On February 2nd 12am PST, the counties with the most increased population density are (@tbl-bing02-inc):
+- On February 2nd 12am PST, the counties with the most increased population are (@tbl-bing02-inc):
 
   - Perry, Alabama (103.0%)
   
@@ -58,7 +191,7 @@ The map highlights substantial variation in population change across affected co
   
   - Hampton, South Carolina (57.4%)
 
-- On February 2nd, the counties with the most decreased population density are (@tbl-bing02-dec):
+- On February 2nd, the counties with the most decreased population are (@tbl-bing02-dec):
 
   - Sevier, Tennessee (-22.8%)
   
@@ -66,7 +199,7 @@ The map highlights substantial variation in population change across affected co
   
   - Swain, North Carolina (-12.4%)
 
-- On February 12th, the counties with the most increased population density are (@tbl-bing12-inc):
+- On February 12th, the counties with the most increased population are (@tbl-bing12-inc):
 
   - Fairfield, South Carolina (31.3%)
   
@@ -74,7 +207,7 @@ The map highlights substantial variation in population change across affected co
   
   - Kemper, Mississippi (23.3%)
   
-- On February 12th, the counties with the most decreased population density are (@tbl-bing12-dec):
+- On February 12th, the counties with the most decreased population are (@tbl-bing12-dec):
 
   - Sevier, Tenneessee (-21.7%)
   
@@ -84,6 +217,203 @@ The map highlights substantial variation in population change across affected co
 
 ## Counties Experiencing the Largest Changes
 
+```{r fig-TS-high, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population density. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
+high_time <- make_county_time_data(high_counties)
+
+plot_county_time_series(
+  high_time,
+  "% Population Change Over Time:\nHighest-Change Counties"
+)
+```
+
+```{r, output = T, fig.height = 3}
+make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
+              counties = high_counties$county_name_acs)
+```
+
+Counties with the greatest population changes generally experienced sustained departures from baseline conditions over multiple reporting periods. These counties did not simply experience a short-term spike or decline; many remained elevated or depressed for several days.
+
+**Takeaways** (@fig-TS-high)
+
+- The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes, but each county has starkly different patterns of population density change.
+
+- Monroe has very strong positive population density throughout this entire time period, which is at least double the population density rates of the other two counties.
+
+- Fairfield maintains strong positive population density change throughout this time period.
+
+- Issaquena tends to have peaks around the 8am PST time, which is 10am local time.
+
+## Community Characteristics of Affected Counties
+
+```{r}
+
+make_demographics_table <- function(file_name, 
+                                    map_date = NULL,
+                                    map_hr = NULL,
+                                    date_col = "ds",
+                                    value_col = "percent_change",
+                                    n_counties = 15,
+                                    output_table_name = NULL,
+                                    table_title = "Demographic Profile of Most Impacted Counties", desc = T,
+                                    source) {
+  
+  # Read file from Outputs folder
+  df <- read_csv(
+    here("Outputs", file_name),
+    show_col_types = FALSE
+  )
+  
+  # Convert date column
+  df <- df |>
+    mutate("{date_col}" := as.Date(.data[[date_col]]))
+  
+  # Use latest date by default
+  if (is.null(map_date)) {
+    map_date <- max(df[[date_col]], na.rm = TRUE)
+  } else {
+    map_date <- as.Date(map_date)
+  }
+  
+  # Summarize to county level
+  county_demo <- df |>
+    filter(.data[[date_col]] == map_date,
+           hour == map_hr)
+  
+  # Create gt table
+  demo_table <- county_demo |>
+    select(
+      County = county_name,
+      State = county_state,
+      `Population Density Change` = percent_change,
+      `Total Population` = total_population,
+      `Median Household Income` = median_income,
+      `Poverty Rate` = poverty_rate,
+      `% Age 65+` = pct_age_65_plus,
+      `% No Vehicle Access` = pct_no_vehicle
+    )
+  demo_table <- arrange(demo_table, `Population Density Change`)
+  if (desc){
+    demo_table <- arrange(demo_table, desc(`Population Density Change`))
+  }
+  demo_table |>
+  head(n_counties) |>
+  gt() |>
+  tab_header(
+    title = table_title,
+    subtitle = paste0("Source: ", source)
+  ) |>
+  # Wrap columns
+  cols_width(
+    County ~ px(120),
+    State ~ px(120),
+    `Population Density Change` ~ px(70),
+    `Total Population` ~ px(70),
+    `Median Household Income` ~ px(70),
+    everything() ~ px(50)
+  ) |>
+  tab_options(
+    table.font.size = px(9),
+    heading.title.font.size = px(16),
+    heading.subtitle.font.size = px(9),
+    data_row.padding = px(25),
+    column_labels.padding = px(0),
+    table.width = pct(100)
+  ) |>
+  fmt_number(
+    columns = `Population Density Change`,
+    decimals = 1,
+    suffixing = FALSE
+  ) |>
+  fmt_number(
+    columns = `Total Population`,
+    decimals = 0,
+    use_seps = TRUE
+  ) |>
+  fmt_currency(
+    columns = `Median Household Income`,
+    currency = "USD",
+    decimals = 0
+  ) |>
+  fmt_percent(
+    columns = c(`Poverty Rate`, `% Age 65+`, `% No Vehicle Access`),
+    decimals = 1
+  ) |>
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) |>
+  opt_table_font(
+    font = list(
+      google_font("Roboto Condensed"),
+      default_fonts()
+    )
+  )
+}
+
+demographics_table_gt <- function(){
+  
+}
+```
+
+```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables. Population density change is the percent change in Facebook Location Services-enabled user population counts per Bing tile in each county at 8-hour intervals. All demographic variables are already at the county level from the American Community Survey in 2022. Days are the 1st to 10th day of data collection, from Feb 2nd to Feb 12. These counties are from 15 Southern states.", fig.height=8, warning = F, output = T}
+
+vars <- c(
+  "Total Population",
+  "Median Household Income",
+  "Poverty Rate",
+  "% Age 65+",
+  "% No Vehicle Access"
+)
+
+# Create scatterplots with correlation in title
+plot_list <- lapply(vars, function(v) {
+
+  # Calculate correlation
+  corr <- cor(
+    demo_table[[v]],
+    demo_table$`Population Density Change`,
+    use = "complete.obs"
+  )
+
+  ggplot(demo_table, aes(
+    x = .data[[v]],
+    y = `Population Density Change`,
+    fill = Day
+  )) +
+    geom_point(
+      shape = 21,
+      size = 3,
+      alpha = 0.1,
+      color = "black"
+    ) +
+    scale_fill_gradient(
+      low = "orange",
+      high = "blue"
+    ) +
+    labs(
+      title = bquote(hat(rho) == .(round(corr, 2))),
+      x = v,
+      y = "Population Density Change"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom"
+    )
+})
+
+plot_list[[6]] <- patchwork::plot_spacer()
+
+# Combine with shared legend
+wrap_plots(plot_list, ncol = 2, guides = "collect") &
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+## Conclusion
+Winter Storm Fern produced measurable shifts in population density across affected counties in the United States of America. The analysis shows that these changes varied significantly across both geography and time, with some counties experiencing substantially greater disruption than others.
+
+Combining population density observations with demographic information provides a more complete picture of community impacts than either source alone. Together, these data offer emergency managers an additional tool for understanding disaster impacts, monitoring recovery, and supporting future preparedness efforts.
 
 
 Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
@@ -481,7 +811,7 @@ make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
   selected_hour = c("0000", "1600"),
-  title_prefix = "Population Density Change (%) - Bing Tiles"
+  title_prefix = "Population Change (%) - Bing Tiles"
 )
 ```
 
@@ -576,7 +906,6 @@ make_mini_map <- function(file_name,
 ```
 
 
-
 ```{r}
 tk_fb_data_bing <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F) |>
   mutate(county_name = gsub(" County", "", county_name_acs))
@@ -652,7 +981,7 @@ high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series(
   high_time,
-  "% Population Density Change Over Time:\nHighest-Change Counties"
+  "% Population Change Over Time:\nHighest-Change Counties"
 )
 ```
 
