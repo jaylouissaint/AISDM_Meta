@@ -24,6 +24,67 @@ format:
           {}{}
         \makeatother
 ---
+# Disaster Manager Brief - Winter Storm Fern: Population Change and Community Impacts
+## Overview
+Winter Storm Fern affected large portions of the southeastern United States during January 2026, producing snow, ice, transportation disruptions, power outages, and fatalities across multiple states. Understanding how populations shifted during the event can help emergency managers identify areas of disruption, evaluate community impacts, and improve planning for future winter storms.
+
+This report uses Meta Population During Crisis data to measure changes in population density during the storm. The analysis combines population density observations with county-level demographic information from the American Community Survey (ACS) to better understand which communities experienced the largest changes and which populations may have faced elevated vulnerability during the event.
+
+The findings indicate that population changes were not evenly distributed across affected areas. While many counties remained near normal population levels, a smaller number experienced substantial and sustained departures from baseline conditions.
+
+## Where Did Population Changes Occur?
+```{r fig-pop-bing, fig.cap = "When showing population density change with Bing tiles, there is little negative changes at these two dates.", output = T}
+make_percent_change_map(
+  file_name = "tk_facebook_pop_aggregated_bing.csv",
+  selected_date = c("2026-02-02", "2026-02-12"),
+  selected_hour = c("0000", "1600"),
+  title_prefix = "Population Density Change (%) - Bing Tiles"
+)
+```
+
+The map highlights substantial variation in population change across affected counties. Some counties experienced large increases in observed population density, while others experienced notable declines.
+
+**Takeaways** (@fig-pop-bing)
+
+- The overall spatial pattern appears fairly stable between the two dates
+
+- There is little visible negative population-density change.
+
+- On February 2nd 12am PST, the counties with the most increased population density are (@tbl-bing02-inc):
+
+  - Perry, Alabama (103.0%)
+  
+  - Cleburne, Arkansas (58.1%)
+  
+  - Hampton, South Carolina (57.4%)
+
+- On February 2nd, the counties with the most decreased population density are (@tbl-bing02-dec):
+
+  - Sevier, Tennessee (-22.8%)
+  
+  - Carroll, Ohio (-22.7%)
+  
+  - Swain, North Carolina (-12.4%)
+
+- On February 12th, the counties with the most increased population density are (@tbl-bing12-inc):
+
+  - Fairfield, South Carolina (31.3%)
+  
+  - Clay, West Virginia (26.2%)
+  
+  - Kemper, Mississippi (23.3%)
+  
+- On February 12th, the counties with the most decreased population density are (@tbl-bing12-dec):
+
+  - Sevier, Tenneessee (-21.7%)
+  
+  - Alleghany, North Carolina (-14.7%)
+  
+  - Laurens, Georgia (-11.8%)
+
+## Counties Experiencing the Largest Changes
+
+
 
 Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
 
@@ -172,7 +233,6 @@ make_percent_change_map <- function(file_name,
   return(combined_plot)
 }
 ```
-
 
 ```{r}
 bing_vs_admin_map <- function(date_col = "ds",
