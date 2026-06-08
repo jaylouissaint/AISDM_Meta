@@ -217,6 +217,122 @@ The map highlights substantial variation in population change across affected co
 
 ## Counties Experiencing the Largest Changes
 
+```{r}
+tk_fb_data_bing <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F) |>
+  mutate(county_name = gsub(" County", "", county_name_acs))
+# Summarize county-level movement/change intensity 
+# Have to decide between median and mean
+county_change_summary <- tk_fb_data_bing |>
+  mutate(ds = as.Date(ds)) |>
+  group_by(county_geoid, county_name, county_name_acs) |>
+  summarise(
+    avg_abs_change = mean(abs(percent_change), na.rm = TRUE),
+    max_abs_change = max(abs(percent_change), na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Select counties with highest, lowest, and average change
+high_counties <- county_change_summary |>
+  slice_max(avg_abs_change, n = 3) |>
+  mutate(change_group = "Highest change")
+
+low_counties <- county_change_summary |>
+  slice_min(avg_abs_change, n = 3) |>
+  mutate(change_group = "Lowest change")
+
+average_value <- median(county_change_summary$avg_abs_change, na.rm = TRUE)
+
+average_counties <- county_change_summary |>
+  mutate(distance_from_average = abs(avg_abs_change - average_value)) |>
+  slice_min(distance_from_average, n = 3) |>
+  mutate(change_group = "Average change")
+```
+
+```{r}
+# TS Prep function
+make_county_time_data <- function(selected_counties) {
+  tk_fb_data_bing |>
+    mutate(ds = as.POSIXct(
+          paste(ds, hour),
+          format = "%Y-%m-%d %H%M",
+          tz = "America/Los_Angeles"
+        ))|>
+    inner_join(
+      selected_counties |> select(county_geoid, change_group),
+      by = "county_geoid"
+    )
+}
+
+# Plotting functions
+plot_county_time_series <- function(time_data, plot_title) {
+  ggplot(time_data, aes(x = ds, y = percent_change, color = county_name)) +
+    geom_hline(yintercept = 0, linewidth = 0.3) +
+    geom_line(linewidth = 0.7) +
+    geom_point(size = 1) +
+    scale_y_continuous(
+      labels = scales::label_number(suffix = "%", accuracy = 1)
+    ) +
+    labs(
+      title = plot_title,
+      x = NULL,
+      y = "% Change vs Baseline",
+      color = "County"
+    ) +
+    theme_minimal()
+}
+
+```
+
+```{r}
+make_mini_map <- function(file_name,
+                                    counties,
+                                    output_plot_name = NULL,
+                                    title_prefix = "") {
+  
+  # Read file
+  df <- read_csv(
+    here("outputs", file_name),
+    show_col_types = FALSE
+  )
+  
+ # Compute global fill range using the summarized county-level data
+  counties_df <- df |>
+    mutate(color_county = ifelse(county_name_acs %in% counties,
+                                 county_name_acs, NA)) |>
+    select(county_geoid, county_name, county_state, color_county) |>
+    unique()
+  
+  # Function to create a single map
+  create_map <- function() {
+    map_data <- counties_sf |>
+      inner_join(counties_df, by = "county_geoid")
+    
+    county_bbox <- st_bbox(map_data)
+    relevant_states <- states_sf |>
+      st_filter(map_data, .predicate = st_intersects)
+    
+    ggplot() +
+      geom_sf(data = map_data, aes(fill = color_county), 
+              show.legend = FALSE, 
+              linewidth = 0.2) +
+      geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7)+
+      scale_fill_discrete(
+        na.value = "white"
+      ) + 
+      labs(
+        fill = "% Change vs Baseline"
+      ) +
+      coord_sf(
+        xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
+        ylim = c(county_bbox["ymin"], county_bbox["ymax"])
+      ) +
+      theme_minimal()
+  }
+  
+  create_map()
+}
+```
+
 ```{r fig-TS-high, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population density. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
 high_time <- make_county_time_data(high_counties)
 
@@ -355,6 +471,39 @@ demographics_table_gt <- function(){
 }
 ```
 
+```{r}
+# Read file from Outputs folder
+  df <- read_csv(
+    here("Outputs", "tk_facebook_pop_aggregated_bing.csv"),
+    show_col_types = FALSE
+  )
+  
+  # Convert date column
+  county_demo <- df |>
+    mutate(ds = as.POSIXct(
+          paste(ds, hour),
+          format = "%Y-%m-%d %H%M",
+          tz = "America/Los_Angeles"
+        ))
+  
+  demo_table <- county_demo |>
+    select(
+      County = county_name,
+      State = county_state,
+      `Population Density Change` = percent_change,
+      `Total Population` = total_population,
+      `Median Household Income` = median_income,
+      `Poverty Rate` = poverty_rate,
+      `% Age 65+` = pct_age_65_plus,
+      `% No Vehicle Access` = pct_no_vehicle,
+      Day = ds
+    ) |>
+    mutate(Day = Day - as.POSIXct("2026-02-02 0000",
+          format = "%Y-%m-%d %H%M",
+          tz = "America/Los_Angeles"),
+          Day = Day/86400)
+```
+
 ```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables. Population density change is the percent change in Facebook Location Services-enabled user population counts per Bing tile in each county at 8-hour intervals. All demographic variables are already at the county level from the American Community Survey in 2022. Days are the 1st to 10th day of data collection, from Feb 2nd to Feb 12. These counties are from 15 Southern states.", fig.height=8, warning = F, output = T}
 
 vars <- c(
@@ -415,6 +564,8 @@ Winter Storm Fern produced measurable shifts in population density across affect
 
 Combining population density observations with demographic information provides a more complete picture of community impacts than either source alone. Together, these data offer emergency managers an additional tool for understanding disaster impacts, monitoring recovery, and supporting future preparedness efforts.
 
+
+# Expanded Situation Report
 
 Formatted based on LA Fire [Situation Report](https://www.crisisready.io/wp-content/uploads/2025/01/ReadyMapper-LAFires-01152025.pdf)
 
