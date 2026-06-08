@@ -604,138 +604,6 @@ library(tigris)
 ```
 
 ```{r}
-# Get US county boundaries
-options(tigris_use_cache = TRUE)
-counties_sf <- counties(cb = TRUE, year = 2023) |>
-  st_transform(4326) |>
-  select(
-    county_state = STATE_NAME,
-    county_name = NAME,
-    county_geoid = GEOID,
-    geometry
-  )
-
-# State boundaries
-states_sf <- tigris::states(cb = TRUE, year = 2023) |>
-  st_transform(4326) |>
-  select(
-    state_name = NAME,
-    geometry
-  )
-library(tidyverse)
-library(sf)
-library(patchwork)  # For arranging plots
-library(scales)     # For squish
-
-make_percent_change_map <- function(file_name,
-                                    date_col = "ds",
-                                    value_col = "percent_change",
-                                    selected_date = NULL,
-                                    selected_hour = NULL,
-                                    output_plot_name = NULL,
-                                    title_prefix = "Population Density Change (%)") {
-  
-  # Read file
-  df <- read_csv(
-    here("outputs", file_name),
-    show_col_types = FALSE
-  )
-  
-  # Determine which dates to use
-  if (is.null(selected_date)) {
-    plot_dates <- max(df[[date_col]], na.rm = TRUE)
-  } else {
-    if (!all(selected_date %in% df[[date_col]])) {
-      stop("One or more selected_date values are not available in the data.")
-    }
-    plot_dates <- selected_date
-  }
-  
- # Compute global fill range using the summarized county-level data
-  all_summarized <- df |>
-    filter(paste(.data[[date_col]], hour) %in% paste(plot_dates, selected_hour))
-  
-  fill_range <- all_summarized |>
-    summarise(min_val = min(percent_change, na.rm = TRUE),
-              max_val = max(percent_change, na.rm = TRUE))
-  
-  # Function to create a single map
-  create_map <- function(plot_date_time) {
-    latest_county <- df |>
-      filter(paste(.data[[date_col]], hour) %in% plot_date_time)
-    
-    map_data <- counties_sf |>
-      inner_join(latest_county, by = "county_geoid")
-    
-    county_bbox <- st_bbox(map_data)
-    relevant_states <- states_sf |>
-      st_filter(map_data, .predicate = st_intersects)
-    
-    plot_date <- gsub("0000", "12am PST",plot_date_time)
-    plot_date <- gsub("0800", "8am PST",plot_date)
-    plot_date <- gsub("1600", "4pm PST",plot_date)
-    
-    ggplot() +
-      geom_sf(data = map_data, aes(fill = percent_change), linewidth = 0.2) +
-      geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7) +
-      scale_fill_gradientn(
-          colours = c("red", "white", "blue"),
-          values = scales::rescale(c(
-            fill_range$min_val,  # -5
-            0,
-            fill_range$max_val   # 75
-          )),
-          limits = c(fill_range$min_val, fill_range$max_val),
-          oob = squish,
-          labels = label_number(suffix = "%", accuracy = 1)
-        ) +
-      labs(
-        title = plot_date,
-        fill = "% Change vs Baseline"
-      ) +
-      coord_sf(
-        xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
-        ylim = c(county_bbox["ymin"], county_bbox["ymax"])
-      ) +
-      theme_minimal()
-  }
-
-  # Create plots
-  
-  plots <- lapply(paste(plot_dates, selected_hour), create_map)
-  
-  # Combine plots side-by-side with shared legend
-  if (length(plots) == 1) {
-    combined_plot <- plots[[1]] +
-      ggtitle(paste(title_prefix, plots[[1]]$labels$title))
-  } else {
-    combined_plot <- wrap_plots(plots, ncol = length(plots), guides = "collect") &
-      theme(legend.position = "bottom")
-    
-    # Shared title
-    combined_plot <- combined_plot + plot_annotation(
-    title = title_prefix,
-    theme = theme(
-      plot.title = element_text(hjust = 0.5)  # centers the title
-    )
-  )
-  }
-  
-  # Save if requested
-  if (!is.null(output_plot_name)) {
-    ggsave(
-      filename = here("outputs", output_plot_name),
-      plot = combined_plot,
-      width = ifelse(length(plot_dates) == 2, 16, 10),
-      height = 7
-    )
-  }
-  
-  return(combined_plot)
-}
-```
-
-```{r}
 bing_vs_admin_map <- function(date_col = "ds",
                                     value_col = "percent_change",
                                     selected_date = NULL,
@@ -913,9 +781,9 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 - **Administrative Regions**: the polygon boundaries for administrative regions derived from the [Database of Global Administrative Areas](https://gadm.org), also known as GADM [@gadm]. Note that we do not have access to these polygon shapes; hence we only use Bing tiles in this report.
 
-- **Percent change**: Percent change in population counts of Facebook app users who have turned on the Location Services device setting on their mobile device and are along the vector defined by the starting Bing tile and ending Bing tile, calculated as the polygon movement at a given time window minus the baseline number, divided by the baseline number.[^pct-change]
+- **Percent change**: Percent change in population counts of Facebook app users who have turned on the Location Services device setting on their mobile device and are along the vector defined by the starting Bing tile and ending Bing tile, calculated as the polygon movement at a given time window minus the baseline number, divided by the baseline number.
 
-[^pct-change]: For county-level analyses,
+For county-level analyses,
 
 $$
 \text{Percent Change}_{cw} =
@@ -930,7 +798,7 @@ $$
 \times 100
 $$
 
-where $c$ denotes a county, $w$ denotes an 8-hour reporting window, and $\(\text{Bing}_c\)$ denotes the set of Bing tiles assigned to county $c$ (based on centroid location).
+where $c$ denotes a county, $w$ denotes an 8-hour reporting window, and ${Bing}_c$ denotes the set of Bing tiles assigned to county $c$ (based on centroid location).
 
 # Aggregation Choices
 
@@ -955,7 +823,7 @@ $$\text{Percent Change}_{cw} =
 }
 \times 100$$
 
-where $c$ is the county, $w$ is the reporting window and $\(\text{Bing}_c\)$ denotes the set of Bing tiles assigned to county $c$ (based on centroid location). The small value added to the denominator follows the logic in the Meta documentation and prevents division by very small baseline values.
+where $c$ is the county, $w$ is the reporting window and ${Bing}_c$ denotes the set of Bing tiles assigned to county $c$ (based on centroid location). The small value added to the denominator follows the logic in the Meta documentation and prevents division by very small baseline values.
 
 This means the maps and tables  represent county-level population density change based on aggregated counts. 
 
@@ -989,7 +857,7 @@ Finally, the data is time-limited. The documentation notes that some datasets ar
 ## % Population Change
 
 
-```{r fig-pop-bing, fig.cap = "When showing population density change with Bing tiles, there is little negative changes at these two dates.", output = T}
+```{r fig-pop-bing, fig.cap = "Red shades represent population decreases relative to baseline number (population exodus), whereas blue shades represent population increases relative to baseline number (population influx). Population changes are measured relative to a baseline computed from the 45 days preceding the event. When showing population density change with Bing tiles, there is little negativechanges at these two dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
@@ -1155,11 +1023,11 @@ plot_county_time_series <- function(time_data, plot_title) {
 }
 
 ```
-The counties are grouped by average absolute population change over the recording period.[^avg-change]
+The counties are grouped by percent population change over the recording period.[^pct-change]
 
-[^avg-change]: The percent changes are summarized over the full recording period for each county. For each county, the absolute value of the percent change is taken at each time point, and those absolute changes are averaged across the 14-day period. This creates a single measure of how much each county deviated from baseline, regardless of whether the change was positive or negative. Counties are then compared using this average absolute change to identify the highest-change, lowest-change, and average-change counties. The county-level change measure is defined as $\text{AvgAbsChange}_i = \frac{1}{T_i}\sum_{t=1}^{T_i} |p_{it}|$, where $p_{it}$ is the percent change for county $i$ at time $t$, and $T_i$ is the number of time periods observed for that county.
+[^pct-change]: See "Percent Change" in Facebook Data Definitions
 
-```{r fig-TS-high, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population density. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
+```{r fig-TS-high, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
 high_time <- make_county_time_data(high_counties)
 
 plot_county_time_series(
@@ -1184,7 +1052,7 @@ make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
 
 - Issaquena tends to have peaks around the 11am EST time, which is 10am local time.
 
-```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population density change with both positive and negative changes.", output = T}
+```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population change with both positive and negative changes.", output = T}
 average_time <- make_county_time_data(average_counties)
 
 plot_county_time_series(
@@ -1548,13 +1416,13 @@ make_imputation_summary_table <- function(file_name,
                                           table_title = "Imputation Summary",
                                           output_dir = "Outputs") {
   
-  # Read file from Outputs folder
+  # Read file
   df <- readr::read_csv(
     here::here(output_dir, file_name),
     show_col_types = FALSE
   )
   
-  # Make sure date is treated as Date
+  # Ensure date column is Date
   df <- df |>
     dplyr::mutate("{date_col}" := as.Date(.data[[date_col]]))
   
@@ -1572,102 +1440,119 @@ make_imputation_summary_table <- function(file_name,
       dplyr::filter(hour %in% selected_hour)
   }
   
-  # Check required columns for count shares
-  required_count_cols <- c(
+  # Required columns
+  required_cols <- c(
     "n_baseline",
     "n_crisis",
     "n_baseline_imputed_amount",
     "n_crisis_imputed_amount"
   )
   
-  missing_count_cols <- setdiff(required_count_cols, names(df))
+  missing_cols <- setdiff(required_cols, names(df))
   
-  if (length(missing_count_cols) > 0) {
+  if (length(missing_cols) > 0) {
     stop(
-      "Missing required count columns: ",
-      paste(missing_count_cols, collapse = ", "),
-      ". Re-run the loading QMD with imputation turned on."
+      "Missing required columns: ",
+      paste(missing_cols, collapse = ", ")
     )
   }
   
-  # If the data has already been aggregated to county-window level,
-  # use n_rows_aggregated and *_imputed_rows.
-  # Otherwise, fall back to row counts and binary imputation flags.
-  if ("n_rows_aggregated" %in% names(df)) {
-    total_tiles <- sum(df$n_rows_aggregated, na.rm = TRUE)
+  # Tile counts
+  total_tiles <- if ("n_rows_aggregated" %in% names(df)) {
+    sum(df$n_rows_aggregated, na.rm = TRUE)
   } else {
-    total_tiles <- nrow(df)
+    nrow(df)
   }
   
-  if ("n_baseline_imputed_rows" %in% names(df)) {
-    baseline_imputed_tiles <- sum(df$n_baseline_imputed_rows, na.rm = TRUE)
-  } else if ("n_baseline_imputed" %in% names(df)) {
-    baseline_imputed_tiles <- sum(df$n_baseline_imputed, na.rm = TRUE)
+  baseline_imputed_tiles <- if ("n_baseline_imputed_rows" %in% names(df)) {
+    sum(df$n_baseline_imputed_rows, na.rm = TRUE)
   } else {
-    stop("Missing n_baseline_imputed_rows or n_baseline_imputed.")
+    sum(df$n_baseline_imputed, na.rm = TRUE)
   }
   
-  if ("n_crisis_imputed_rows" %in% names(df)) {
-    crisis_imputed_tiles <- sum(df$n_crisis_imputed_rows, na.rm = TRUE)
-  } else if ("n_crisis_imputed" %in% names(df)) {
-    crisis_imputed_tiles <- sum(df$n_crisis_imputed, na.rm = TRUE)
+  crisis_imputed_tiles <- if ("n_crisis_imputed_rows" %in% names(df)) {
+    sum(df$n_crisis_imputed_rows, na.rm = TRUE)
   } else {
-    stop("Missing n_crisis_imputed_rows or n_crisis_imputed.")
+    sum(df$n_crisis_imputed, na.rm = TRUE)
   }
   
-  # Summarize counts and imputed shares
+  # Summary table
   imputation_summary <- tibble::tibble(
+    
     Count = c("Baseline", "Crisis"),
-    `Total Count` = c(
+    
+    `Total (New) Count (Users)` = c(
       sum(df$n_baseline, na.rm = TRUE),
       sum(df$n_crisis, na.rm = TRUE)
     ),
-    `Imputed Count` = c(
+    
+    `Imputed Count (Users)` = c(
       sum(df$n_baseline_imputed_amount, na.rm = TRUE),
       sum(df$n_crisis_imputed_amount, na.rm = TRUE)
     ),
-    `Imputed Bing Tiles` = c(
-      baseline_imputed_tiles,
-      crisis_imputed_tiles
-    ),
+    
     `Total Bing Tiles` = c(
       total_tiles,
       total_tiles
+    ),
+    
+    `Number of Imputed Bing Tiles` = c(
+      baseline_imputed_tiles,
+      crisis_imputed_tiles
     )
+    
   ) |>
     dplyr::mutate(
-      `Observed Count` = `Total Count` - `Imputed Count`,
-      `Share of Count Imputed` = `Imputed Count` / `Total Count`,
-      `Share of Bing Tiles Imputed` = `Imputed Bing Tiles` / `Total Bing Tiles`
+      
+      `Original Count (Users)` =
+        `Total (New) Count (Users)` -
+        `Imputed Count (Users)`,
+      
+      `Share of Total (New) Count Imputed` =
+        `Imputed Count (Users)` /
+        `Total (New) Count (Users)`,
+      
+      `Share of Bing Tiles Imputed` =
+        `Number of Imputed Bing Tiles` /
+        `Total Bing Tiles`
+      
     ) |>
     dplyr::select(
       Count,
-      `Total Count`,
-      `Observed Count`,
-      `Imputed Count`,
-      `Share of Count Imputed`,
+      `Original Count (Users)`,
+      `Total (New) Count (Users)`,
+      `Imputed Count (Users)`,
+      `Share of Total (New) Count Imputed`,
       `Total Bing Tiles`,
-      `Imputed Bing Tiles`,
+      `Number of Imputed Bing Tiles`,
       `Share of Bing Tiles Imputed`
     )
   
-  # Subtitle based on filters
+  # Subtitle
   subtitle_text <- dplyr::case_when(
-    !is.null(selected_date) & !is.null(selected_hour) ~ paste(
-      "Filtered to",
-      paste(selected_date, collapse = ", "),
-      "and hour(s)",
-      paste(selected_hour, collapse = ", ")
-    ),
-    !is.null(selected_date) ~ paste(
-      "Filtered to",
-      paste(selected_date, collapse = ", ")
-    ),
-    !is.null(selected_hour) ~ paste(
-      "Filtered to hour(s)",
-      paste(selected_hour, collapse = ", ")
-    ),
+    
+    !is.null(selected_date) & !is.null(selected_hour) ~
+      paste(
+        "Filtered to",
+        paste(selected_date, collapse = ", "),
+        "and hour(s)",
+        paste(selected_hour, collapse = ", ")
+      ),
+    
+    !is.null(selected_date) ~
+      paste(
+        "Filtered to",
+        paste(selected_date, collapse = ", ")
+      ),
+    
+    !is.null(selected_hour) ~
+      paste(
+        "Filtered to hour(s)",
+        paste(selected_hour, collapse = ", ")
+      ),
+    
     TRUE ~ "All available dates and hours"
+    
   )
   
   # Build gt table
@@ -1681,7 +1566,7 @@ make_imputation_summary_table <- function(file_name,
       columns = c(
         `Original Count (Users)`,
         `Total (New) Count (Users)`,
-        `Imputed Count(Users)`,
+        `Imputed Count (Users)`,
         `Total Bing Tiles`,
         `Number of Imputed Bing Tiles`
       ),
@@ -1699,19 +1584,19 @@ make_imputation_summary_table <- function(file_name,
       align = "center",
       columns = everything()
     ) |>
-    tab_options(
-      table.font.size = px(9),
-      heading.title.font.size = px(16),
-      heading.subtitle.font.size = px(9),
-      data_row.padding = px(5),
-      column_labels.padding = px(0),
-      table.width = pct(100)
+    gt::tab_options(
+      table.font.size = gt::px(9),
+      heading.title.font.size = gt::px(16),
+      heading.subtitle.font.size = gt::px(9),
+      data_row.padding = gt::px(5),
+      column_labels.padding = gt::px(0),
+      table.width = gt::pct(100)
     ) |>
-    cols_width(
-      everything() ~ px(70)
+    gt::cols_width(
+      everything() ~ gt::px(70)
     )
   
-  # Save if requested
+  # Save table
   if (!is.null(output_table_name)) {
     gt::gtsave(
       imputation_table,
@@ -1726,7 +1611,7 @@ make_imputation_summary_table <- function(file_name,
 
 ```{r, output = TRUE}
 #| label: tbl-imputation-summary-window
-#| tbl-cap: "Share of total baseline and crisis counts and Bing tile observations that come from imputed values for the selected reporting window."
+#| tbl-cap: "Share of baseline and crisis Facebook user counts and Bing tile observations that originate from imputed values for the selected reporting window. Counts represent the number of Facebook users with Location Services enabled who were observed within a Bing tile during a reporting window. Because the data are reported repeatedly across multiple 8-hour reporting windows, the same user may contribute to counts in multiple observations. To preserve observations suppressed by Meta's privacy protections, missing baseline counts were imputed as 3 and missing crisis counts were imputed as 9. The table reports both the share of total counts and the share of Bing tile observations that were affected by this imputation procedure."
 
 make_imputation_summary_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv"
