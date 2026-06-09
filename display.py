@@ -303,10 +303,10 @@ with tab_info:
         """
     )
 
-    #video_file = open("storm_animation.mp4", "rb")
-    #video_bytes = video_file.read()
+    video_file = open("storm_animation.mp4", "rb")
+    video_bytes = video_file.read()
 
-    #st.video(video_bytes)
+    st.video(video_bytes)
 
 # =========================
 # Maps tab
