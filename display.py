@@ -207,7 +207,7 @@ def create_map(plot_datetime):
 
     latest_county = get_map_data(df, selected_datetime)
 
-    fig = px.choropleth_mapbox(
+    fig = px.choropleth_map(
         latest_county,
         geojson=county_geojson,
         locations="county_geoid",
@@ -231,7 +231,7 @@ def create_map(plot_datetime):
             "n_baseline": "Facebook Population at 45-day Baseline",
             "total_population": "Total Population"
         },
-        mapbox_style="carto-positron",
+        map_style="carto-positron",
         center={"lat": 36, "lon": -88},
         zoom=5
     )
@@ -302,6 +302,11 @@ with tab_info:
         counts are aggregated to the county level for this analysis.
         """
     )
+
+    #video_file = open("storm_animation.mp4", "rb")
+    #video_bytes = video_file.read()
+
+    #st.video(video_bytes)
 
 # =========================
 # Maps tab
