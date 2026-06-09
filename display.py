@@ -251,21 +251,19 @@ def create_map(plot_datetime):
 
 st.markdown(
     """
-    A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued
-    through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern
-    plains to the East Coast. Several states experienced network outages and extremely cold temperatures.  According to the
-    [Weather Channel (2026)](https://weather.com/news/weather/news/2026-01-24-live-updates-winter-storm-fern-january-24),
-    temperatures in Seagull, Minnesota and in Iron County, Wisconsin hit lows of -43 degrees and -41 degrees Fahrenheit,
-    respectively. Emergency declarations were issued in several states --including Arkansas, Georgia, Indiana, Kentucky, Louisiana,
-    Maryland, Mississippi, North Carolina, South Carolina, Tennessee, Virginia, and West Virginia-- according to
-    [Congressional Research Service (2026)](https://www.congress.gov/crs-product/IN12644). Power outages due to downed trees and ice
-    occurred in Southern States, such as Texas, Louisiana, Mississippi, and Tennessee. States from Maine to New Mexico experienced
-    significant snowfall, and sleet occurred in the Mid-Atlantic and Northeast. As of January 29th, there were up to 115 fatalities
-    across 20 states after this winter storm, and approximately 2.5 million customers experienced power outages across the United
-    States according to [Kothari (2026)](https://watchers.news/2026/01/29/over-100-fatalities-confirmed-after-major-january-2026-u-s-winter-storm/).
-    Verisk, who are catastrophe risk modelling specialists, estimated a total of US \$4 billion in industry losses with 14 states, ranging from
-    Massachusetts to Texas, that could each exceed \$50 million in insured losses according to
-    [Evans (2026)](https://www.artemis.bm/news/verisk-estimates-winter-storm-fern-insured-losses-could-reach-4bn/).
+    A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd, 2026 and
+    continued through January 26th, 2026. The storm brought heavy snow and freezing rain to several US states, ranging
+    from the southern plains to the East Coast. Several states experienced network outages and extremely cold temperatures.
+    For example, temperatures in Lexington, Kentucky fell to −16 degrees Fahrenheit (including wind chill) 
+    ([Lexington Herald-Leader (2026)](https://www.kentucky.com/news/weather-news/article314454683.html)). Emergency declarations
+    were issued in Arkansas, Georgia, Indiana, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, South Carolina,
+    Tennessee, Virginia, and West Virginia ([Congressional Research Service (2026) ](https://www.congress.gov/crs-product/IN12644)).
+    Power outages due to downed trees and ice occurred in Southern States, such as Texas, Louisiana, Mississippi, and Tennessee.
+    From Maine to New Mexico, states experienced significant snowfall and sleet. As of January 29th, there were up to 115 fatalities
+    across 20 states after this winter storm, and approximately 2.5 million customers experienced power outages across the country
+    ([Kothari (2026)](https://watchers.news/2026/01/29/over-100-fatalities-confirmed-after-major-january-2026-u-s-winter-storm/)).
+    Verisk, who are catastrophe risk modelling specialists, estimated a total of \$4 billion in industry losses while 14 states
+    could each exceed \$50 million in insured losses ([Evans (2026)](https://www.artemis.bm/news/verisk-estimates-winter-storm-fern-insured-losses-could-reach-4bn/)).
     """
 )
 
@@ -295,13 +293,13 @@ with tab_info:
         these plots, and the "Background on Data" tab provides more information about the data processing.
 
         The following visualizations are developed based on Meta AI for Good's data through Facebook with a focus on
-        Tennessee and Kentucky. The data covers population change during the collection period
-        of January 30 to February 12. These datasets use location activity from Facebook users or Facebook Business Pages to
-        estimate how people, population density, network coverage, and business activity change during a crisis, so they do not
-        represent the entire population in the area. Counts of people within a certain region are recorded at 8-hour intervals
-        in this dataset. The counts during the crisis are compared to the counts at a baseline, which are the counts in the same
-        region 45 days prior to data collection. These regions are Bing tiles, what are about 6 x 6 city blocks. These counts are aggregated to the county level for this
-        analysis.
+        Tennessee, Kentucky and surrounding states. The data covers population movement during the collection period
+        of January 30 to February 12. These datasets use location activity from Facebook users to estimate how populations
+        shift during a crisis. Data do not represent the entire population in the area. Counts of people within a certain
+        region are recorded at 8-hour intervals in this dataset. The counts during the crisis are compared to the counts
+        at a baseline, which are the counts in the same region 45 days prior to data collection. These regions are either Bing
+        tiles, what are about 1.5 x 1.5 mile blocks, or administrative regions as determined by [GADM](https://gadm.org). These
+        counts are aggregated to the county level for this analysis.
         """
     )
 
@@ -320,11 +318,13 @@ with tab_maps:
         The subregions (i.e. Bing tiles) are aggregated up to counties.
         Each county is colored based on the percent change in Facebook population compared to the baseline, which is calculated as:
         """)
-    st.latex(r'''PercentChange_{cw} = \frac{n_{crisis,cw} - n_{baseline,cw}}{n_{baseline,cw} + 1} \times 100''')
+    st.latex(r'''\text{Percent Change}_{cw} =\frac{\sum_{i \in \text{Bing}_c} n_{\text{crisis},ciw}-\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}}{\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}+ 1}\times 100''')
     st.markdown(
         """
-        where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the logic in
-        the Meta documentation and prevents division by very small baseline values. $n_{baseline}$ is the Facebook population in
+        where $c$ is the county, $w$ is the reporting window and ${Bing}_c$ denotes the set of Bing tiles assigned to county $c$
+        (based on centroid location). The small value added to the denominator follows the logic in the Meta documentation and
+        prevents division by very small baseline values. The plot represents county-level population density change based on aggregated counts. 
+        $n_{baseline}$ is the Facebook population in
         that county during the 45-day baseline period, and $n_{crisis}$ is the Facebook population in that county during the
         selected date and hour. The color scale ranges from red (indicating a large decrease in population compared to baseline)
         to blue (indicating a large increase in population compared to baseline). Hovering over a county will show the county name,
@@ -357,11 +357,13 @@ with tab_scatter:
          which is calculated as:
          """
     )
-    st.latex(r'''PercentChange_{cw} = \frac{n_{crisis,cw} - n_{baseline,cw}}{n_{baseline,cw} + 1} \times 100''')
+    st.latex(r'''\text{Percent Change}_{cw} =\frac{\sum_{i \in \text{Bing}_c} n_{\text{crisis},ciw}-\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}}{\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}+ 1}\times 100''')
     st.markdown(
         """
-        where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the logic in
-        the Meta documentation and prevents division by very small baseline values. $n_{baseline}$ is the Facebook population in
+        where $c$ is the county, $w$ is the reporting window and ${Bing}_c$ denotes the set of Bing tiles assigned to county $c$
+        (based on centroid location). The small value added to the denominator follows the logic in the Meta documentation and
+        prevents division by very small baseline values. The plot represents county-level population density change based on aggregated counts. 
+        $n_{baseline}$ is the Facebook population in
         that county during the 45-day baseline period, and $n_{crisis}$ is the Facebook population in that county during the
         selected date and hour. The color scale ranges from red (indicating a large decrease in population compared to baseline)
         to blue (indicating a large increase in population compared to baseline). Hovering over a county will show the county name,
@@ -458,14 +460,15 @@ with tab_timeseries:
         selected counties, according to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs).
         The percent change is calculated as:
         """)
-    st.latex(r'''PercentChange_{cw} = \frac{n_{crisis,cw} - n_{baseline,cw}}{n_{baseline,cw} + 1} \times 100''')
+    st.latex(r'''\text{Percent Change}_{cw} =\frac{\sum_{i \in \text{Bing}_c} n_{\text{crisis},ciw}-\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}}{\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}+ 1}\times 100''')
     st.markdown(
         """
-        where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the logic in
-        the Meta documentation and prevents division by very small baseline values. $n_{baseline}$ is the Facebook population in
+        where $c$ is the county, $w$ is the reporting window and ${Bing}_c$ denotes the set of Bing tiles assigned to county $c$
+        (based on centroid location). The small value added to the denominator follows the logic in the Meta documentation and
+        prevents division by very small baseline values. The plot represents county-level population density change based on aggregated counts. 
+        $n_{baseline}$ is the Facebook population in
         that county during the 45-day baseline period, and $n_{crisis}$ is the Facebook population in that county during the
-        selected date and hour. The color scale ranges from red (indicating a large decrease in population compared to baseline)
-        to blue (indicating a large increase in population compared to baseline). Hovering over a county will show the county name,
+        selected date and hour. Hovering over a county will show the county name,
         state, percent change, Facebook population at the given time, Facebook population at baseline, and total population according
         to the [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs).
         """
@@ -762,47 +765,47 @@ with tab_background:
 
     st.markdown(
         """
-        The Facebook data used in this report comes from Meta’s Data for Good crisis datasets. In plain terms, these datasets
-        use location activity from Facebook users or Facebook business Pages to estimate how people, population density, network
-        coverage, and business activity change during a crisis. The data does not represent everyone in the affected area. For
-        population and movement datasets, it only represents Facebook app users who have Location Services enabled. For business
-        activity, it represents qualifying Facebook business Pages with enough activity to be included while preserving privacy. 
-
+        The Facebook data used in this report comes from Meta’s Data for Good crisis datasets. In plain terms, these datasets use
+        location activity from Facebook users or Facebook business Pages to estimate how population shifts during a crisis.
+        The data does not represent everyone in the affected area: for population and movement datasets, it only represents
+        Facebook app users who have Location Services enabled. For business activity, it represents qualifying Facebook Business
+        Pages with enough activity to be included while preserving privacy. 
+        
         The data is constructed by comparing what is observed during the crisis period to what was typical before the crisis.
-        For example, population density during the storm is compared to a pre-crisis baseline of 45-days prior to data collection.
-        Movement during the storm is compared to normal movement patterns between the same places before the event. Business activity
-        is compared to normal posting behavior from business pages before the crisis. Because the data is relative to a baseline,
-        the main signal is not the raw count itself, but whether a place is above or below its pre-crisis level.
-
-        Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 3am EST,
-        11am EST and 7pm EST. This means that the time periods do not automatically adjust to local time zones, which should be
-        kept in mind when interpreting daily patterns. Business activity is reported daily, based on the date value in the dataset. 
-        Some rows have missing values for `n_baseline` or `n_crisis` because of Meta’s privacy protections around small counts.
-        To avoid dropping these rows entirely, missing `n_baseline` values are imputed as 3 and missing `n_crisis` values are
-        imputed as 9.
-
+        Namely, population movements during the storm is compared to a pre-crisis baseline of 45-days prior to data collection.
+        Because the data is relative to a baseline, the main signal is not the raw count itself, but whether a place is above or
+        below its pre-crisis level.
+        
+        Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 3:00, 11:00,
+        and 19:00 Eastern Time (EST). This means that the time periods do not automatically adjust to local time zones.
+        Business activity is reported daily, based on the date value in the dataset. 
+        Some rows have missing values for `n_baseline` or `n_crisis` because of Meta’s privacy protections around small
+        counts (counts less than or eual to 10 are not reported) . To avoid dropping these rows entirely, missing `n_baseline`
+        values are imputed as 3 and missing `n_crisis` values are imputed as 9. See Table 6 for percentage of data imputed.
+        
         After imputation, observations are summarized by county and reporting window. Because the data may include multiple
         observations within a single day, the reporting window is defined using both the date and the time-window information
-        available in the data. For each county-window pair, the baseline counts are summed across all Bing tile observations
-        in that county and reporting window, and the crisis counts are summed across those same observations. The county-window
+        available in the data. For each county-window pair, the baseline counts are summed across all Bing tile observations in
+        that county and reporting window, and the crisis counts are summed across those same observations. The county-window
         percent change is then calculated as:
         """
     )
-    st.latex(r'''PercentChange_{cw} = \frac{n_{crisis,cw} - n_{baseline,cw}}{n_{baseline,cw} + 1} \times 100''')
+    st.latex(r'''\text{Percent Change}_{cw} =\frac{\sum_{i \in \text{Bing}_c} n_{\text{crisis},ciw}-\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}}{\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}+ 1}\times 100''')
     st.markdown(
         """
-        where $c$ is the county and $w$ is the reporting window. The small value added to the denominator follows the
-        logic in the Meta documentation and prevents division by very small baseline values.
+        where $c$ is the county, $w$ is the reporting window and ${Bing}_c$ denotes the set of Bing tiles assigned to county $c$
+        (based on centroid location). The small value added to the denominator follows the logic in the Meta documentation and
+        prevents division by very small baseline values. The plot represents county-level population density change based on
+        aggregated counts. 
 
         In addition to the Meta crisis datasets, county-level demographic data was added from the
         [American Community Survey in 2022](https://www.census.gov/programs-surveys/acs). This demographic data was incorporated
-        with the use of the [`tidycensus`](https://walker-data.com/tidycensus/) package. This outside data provides context about
+        with the use of the [`tidycensus` package](https://walker-data.com/tidycensus/). This outside data provides context about
         the counties affected by the storm, including total population, median household income, poverty rate, share of residents
         age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be
         more vulnerable during a crisis.
-
-        The demographic data is joined using `county_geoid`, a standardized county identifier. This is important because county
-        names alone are not unique across states. For example, many states have counties with the same name, but each county has
-        a unique GEOID.
+        
+        The demographic data is joined using GEOID, a standardized county identifier. This is important because county names alone
+        are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
         """
     )
