@@ -49,7 +49,7 @@ base_geo = counties[["county_geoid", "geometry"]]
 
 vmin = df["percent_change"].min()
 vmax = df["percent_change"].max()
-norm = TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+norm = TwoSlopeNorm(vmin=-vmax, vcenter=0, vmax=vmax)
 
 # -------------------------
 # Frame generation loop
