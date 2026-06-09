@@ -284,7 +284,7 @@ make_county_time_data <- function(selected_counties) {
 }
 
 # Plotting functions
-plot_county_time_series <- function(time_data, plot_title) {
+plot_county_time_series <- function(time_data) {
   ggplot(time_data, aes(x = ds, y = percent_change, color = county_name)) +
     geom_hline(yintercept = 0, linewidth = 0.3) +
     geom_line(linewidth = 0.7) +
@@ -293,7 +293,6 @@ plot_county_time_series <- function(time_data, plot_title) {
       labels = scales::label_number(suffix = "%", accuracy = 1)
     ) +
     labs(
-      title = plot_title,
       x = NULL,
       y = "% Change vs Baseline",
       color = "County"
@@ -353,18 +352,36 @@ make_mini_map <- function(file_name,
 }
 ```
 
+
+```{r}
+combine_map_and_plot <- function(plot, map, main_title){
+  (plot + map) +
+    plot_layout(
+      widths = c(0.6, 0.4), #adjust widths of plots
+      guides = "collect"
+    ) +
+    plot_annotation(
+      title = main_title
+    ) &
+    theme(
+      legend.position = "top",
+      legend.justification = "center",
+      plot.title = element_text(hjust = 0.5)
+    )
+}
+```
+
+
 ```{r fig-TS-high-dm, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population density. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
 high_time <- make_county_time_data(high_counties)
 
-plot_county_time_series(
-  high_time,
-  "% Population Change Over Time:\nHighest-Change Counties"
+plot1 <- plot_county_time_series(
+  high_time
 )
-```
-
-```{r, output = T, fig.height = 3}
-make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
+map1 <- make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
               counties = high_counties$county_name_acs)
+combine_map_and_plot(plot1, map1,
+                     "% Population Change Over Time: Highest-Change Counties")
 ```
 
 Counties with the greatest population changes generally experienced sustained departures from baseline conditions over multiple reporting periods. These counties did not simply experience a short-term spike or decline; many remained elevated or depressed for several days.
@@ -906,123 +923,6 @@ make_percent_change_map(
   
 ## Time Series of Movement
 
-```{r}
-make_mini_map <- function(file_name,
-                                    counties,
-                                    output_plot_name = NULL,
-                                    title_prefix = "") {
-  
-  # Read file
-  df <- read_csv(
-    here("outputs", file_name),
-    show_col_types = FALSE
-  )
-  
- # Compute global fill range using the summarized county-level data
-  counties_df <- df |>
-    mutate(color_county = ifelse(county_name_acs %in% counties,
-                                 county_name_acs, NA)) |>
-    select(county_geoid, county_name, county_state, color_county) |>
-    unique()
-  
-  # Function to create a single map
-  create_map <- function() {
-    map_data <- counties_sf |>
-      inner_join(counties_df, by = "county_geoid")
-    
-    county_bbox <- st_bbox(map_data)
-    relevant_states <- states_sf |>
-      st_filter(map_data, .predicate = st_intersects)
-    
-    ggplot() +
-      geom_sf(data = map_data, aes(fill = color_county), 
-              show.legend = FALSE, 
-              linewidth = 0.2) +
-      geom_sf(data = relevant_states, fill = NA, color = "black", linewidth = 0.7)+
-      scale_fill_discrete(
-        na.value = "white"
-      ) + 
-      labs(
-        fill = "% Change vs Baseline"
-      ) +
-      coord_sf(
-        xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
-        ylim = c(county_bbox["ymin"], county_bbox["ymax"])
-      ) +
-      theme_minimal()
-  }
-  
-  create_map()
-}
-```
-
-
-```{r}
-tk_fb_data_bing <- read_csv(here("Outputs", "tk_facebook_pop_aggregated_bing.csv"), show_col_types = F) |>
-  mutate(county_name = gsub(" County", "", county_name_acs))
-# Summarize county-level movement/change intensity 
-# Have to decide between median and mean
-county_change_summary <- tk_fb_data_bing |>
-  mutate(ds = as.Date(ds)) |>
-  group_by(county_geoid, county_name, county_name_acs) |>
-  summarise(
-    avg_abs_change = mean(abs(percent_change), na.rm = TRUE),
-    max_abs_change = max(abs(percent_change), na.rm = TRUE),
-    .groups = "drop"
-  )
-
-# Select counties with highest, lowest, and average change
-high_counties <- county_change_summary |>
-  slice_max(avg_abs_change, n = 3) |>
-  mutate(change_group = "Highest change")
-
-low_counties <- county_change_summary |>
-  slice_min(avg_abs_change, n = 3) |>
-  mutate(change_group = "Lowest change")
-
-average_value <- median(county_change_summary$avg_abs_change, na.rm = TRUE)
-
-average_counties <- county_change_summary |>
-  mutate(distance_from_average = abs(avg_abs_change - average_value)) |>
-  slice_min(distance_from_average, n = 3) |>
-  mutate(change_group = "Average change")
-```
-
-
-```{r}
-# TS Prep function
-make_county_time_data <- function(selected_counties) {
-  tk_fb_data_bing |>
-    mutate(ds = as.POSIXct(
-          paste(ds, hour),
-          format = "%Y-%m-%d %H%M",
-          tz = "America/Los_Angeles"
-        ))|>
-    inner_join(
-      selected_counties |> select(county_geoid, change_group),
-      by = "county_geoid"
-    )
-}
-
-# Plotting functions
-plot_county_time_series <- function(time_data, plot_title) {
-  ggplot(time_data, aes(x = ds, y = percent_change, color = county_name)) +
-    geom_hline(yintercept = 0, linewidth = 0.3) +
-    geom_line(linewidth = 0.7) +
-    geom_point(size = 1) +
-    scale_y_continuous(
-      labels = scales::label_number(suffix = "%", accuracy = 1)
-    ) +
-    labs(
-      title = plot_title,
-      x = NULL,
-      y = "% Change vs Baseline",
-      color = "County"
-    ) +
-    theme_minimal()
-}
-
-```
 The counties are grouped by percent population change over the recording period.[^pct-change]
 
 [^pct-change]: See "Percent Change" in Facebook Data Definitions
@@ -1030,15 +930,14 @@ The counties are grouped by percent population change over the recording period.
 ```{r fig-TS-high, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
 high_time <- make_county_time_data(high_counties)
 
-plot_county_time_series(
-  high_time,
-  "% Population Change Over Time:\nHighest-Change Counties"
+plot2 <- plot_county_time_series(
+  high_time
 )
-```
 
-```{r, output = T, fig.height = 3}
-make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
+map2 <- make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
               counties = high_counties$county_name_acs)
+combine_map_and_plot(plot2, map2,
+                     "% Population Change Over Time: Highest-Change Counties")
 ```
 
 
@@ -1055,16 +954,15 @@ make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
 ```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population change with both positive and negative changes.", output = T}
 average_time <- make_county_time_data(average_counties)
 
-plot_county_time_series(
-  average_time,
-  "% Population Change Over Time:\nAverage-Change Counties"
+plot3 <- plot_county_time_series(
+  average_time
 )
+map3 <- make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
+              counties = average_counties$county_name_acs)
+combine_map_and_plot(plot3, map3,
+                     "% Population Change Over Time: Average-Change Counties")
 ```
 
-```{r, output = T, fig.height = 3}
-make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
-              counties = average_counties$county_name_acs)
-```
 
 **Takeaways** (@fig-TS-medium)
 
@@ -1081,16 +979,15 @@ make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
 ```{r fig-TS-low, fig.cap = "The three counties with the lowest change have a notable drop into extreme negative population density change on February 9th.",  output = T}
 low_time <- make_county_time_data(low_counties)
 
-plot_county_time_series(
-  low_time,
-  "% Population  Change Over Time:\nLowest-Change Counties"
+plot4 <- plot_county_time_series(
+  low_time
 )
+map4 <- make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
+              counties = low_counties$county_name_acs)
+combine_map_and_plot(plot4, map4,
+                     "% Population  Change Over Time: Lowest-Change Counties")
 ```
 
-```{r, output = T, fig.height = 3}
-make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
-              counties = low_counties$county_name_acs)
-```
 
 **Takeaways** (@fig-TS-low)
 
