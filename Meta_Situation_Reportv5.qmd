@@ -882,16 +882,16 @@ make_demographics_table <- function(file_name,
     select(
       County = county_name,
       State = county_state,
-      `Population Density Change` = percent_change,
+      `Population Change (%)` = percent_change,
       `Total Population` = total_population,
       `Median Household Income` = median_income,
       `Poverty Rate` = poverty_rate,
       `% Age 65+` = pct_age_65_plus,
       `% No Vehicle Access` = pct_no_vehicle
     )
-  demo_table <- arrange(demo_table, `Population Density Change`)
+  demo_table <- arrange(demo_table, `Population Change (%)`)
   if (desc){
-    demo_table <- arrange(demo_table, desc(`Population Density Change`))
+    demo_table <- arrange(demo_table, desc(`Population Change (%)`))
   }
   demo_table |>
   head(n_counties) |>
@@ -904,7 +904,7 @@ make_demographics_table <- function(file_name,
   cols_width(
     County ~ px(120),
     State ~ px(120),
-    `Population Density Change` ~ px(70),
+    `Population Change (%)` ~ px(70),
     `Total Population` ~ px(70),
     `Median Household Income` ~ px(70),
     everything() ~ px(50)
@@ -918,7 +918,7 @@ make_demographics_table <- function(file_name,
     table.width = pct(100)
   ) |>
   fmt_number(
-    columns = `Population Density Change`,
+    columns = `Population Change (%)`,
     decimals = 1,
     suffixing = FALSE
   ) |>
