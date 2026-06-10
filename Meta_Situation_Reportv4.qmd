@@ -46,11 +46,11 @@ library(dplyr)
 library(sf)
 library(tigris)
 ```
-Winter Storm Fern affected large portions of the southeastern United States during January 2026, producing snow, ice, transportation disruptions, power outages, and fatalities across multiple states. Understanding how populations shifted during the event can help emergency managers identify areas of disruption, evaluate community impacts, and improve planning for future winter storms.
+Winter Storm Fern affected large portions of the southeastern U.S during January 2026, producing snow, ice, transportation disruptions, power outages, and fatalities across multiple states. Understanding how populations shifted during the event can help emergency managers identify areas of disruption, evaluate community impacts, and improve planning for future winter storms.
 
-This report uses Meta Population During Crisis data to measure changes in population density during the storm. The analysis combines population density observations with county-level demographic information from the American Community Survey (ACS) to better understand which communities experienced the largest changes and which populations may have faced elevated vulnerability during the event.
+This report uses Meta Population During Crisis data to measure changes in population during the storm. The analysis combines population observations with county-level demographic information from the American Community Survey (ACS) to better understand which communities experienced the largest changes and which populations may have faced elevated vulnerability during the event.
 
-The findings indicate that population changes were not evenly distributed across affected areas. While many counties remained near normal population levels, a smaller number experienced substantial and sustained departures from baseline conditions.
+The main findings suggest that population change during the post-storm period was geographically concentrated rather than evenly distributed across the region. The strongest positive changes in population (i.e. counties with a population influx at the time) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. Meanwhile, negative changes (i.e. counties with an average exodus occurred at the time) were experienced most strongly in Sevier County, Tennessee. Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. However, the average- and low-change counties do have a substantial drop in population  change on February 9th.
 
 ## Where Did Population Changes Occur?
 
@@ -84,7 +84,7 @@ make_percent_change_map <- function(file_name,
                                     selected_date = NULL,
                                     selected_hour = NULL,
                                     output_plot_name = NULL,
-                                    title_prefix = "Population Density Change (%)") {
+                                    title_prefix = "Population Change (%)") {
   
   # Read file
   df <- read_csv(
@@ -186,22 +186,22 @@ make_percent_change_map <- function(file_name,
 }
 ```
 
-```{r fig-pop-bing-dm, fig.cap = "When showing population density change with Bing tiles, there is little negative changes at these two dates.", output = T}
+```{r fig-pop-bing-dm, fig.cap = "Red shades represent counties where the population decreased relative to the baseline number (i.e. , a population exodus), whereas blue shades represent population increases relative to baseline number (i.e., population influx). Population changes are measured relative to a baseline computed from the 45 days preceding the event. We can see there is little negative changes at these two dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
   selected_hour = c("0000", "1600"),
-  title_prefix = "Population Change (%) - Bing Tiles"
+  title_prefix = "County-Level Population Change (%) - Bing Tiles"
 )
 ```
 
-The map highlights substantial variation in population change across affected counties. Some counties experienced large increases in observed population density, while others experienced notable declines.
+The map highlights substantial variation in population change across affected counties. Some counties experienced large increases in observed population, while others experienced notable declines.
 
-**Takeaways** (@fig-pop-bing)
+**Takeaways** (@fig-pop-bing-dm)
 
-- The overall spatial pattern appears fairly stable between the two dates
+- The overall spatial pattern appears fairly stable between the two dates.
 
-- There is little visible negative population-density change.
+- There is little visible negative population change.
 
 - On February 2nd 12am PST, the counties with the most increased population are (@tbl-bing02-inc):
 
@@ -372,7 +372,7 @@ combine_map_and_plot <- function(plot, map, main_title){
 ```
 
 
-```{r fig-TS-high-dm, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population density. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
+```{r fig-TS-high-dm, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute percent change in population. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST. Percent population change is relative to the baseline population (i.e., 45 days prior to the start of a disaster)", output = T}
 high_time <- make_county_time_data(high_counties)
 
 plot1 <- plot_county_time_series(
@@ -386,220 +386,35 @@ combine_map_and_plot(plot1, map1,
 
 Counties with the greatest population changes generally experienced sustained departures from baseline conditions over multiple reporting periods. These counties did not simply experience a short-term spike or decline; many remained elevated or depressed for several days.
 
-**Takeaways** (@fig-TS-high)
+**Takeaways** (@fig-TS-high-dm)
 
-- The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes, but each county has starkly different patterns of population density change.
+- The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes, but each county has starkly different patterns of population change.
 
-- Monroe has very strong positive population density throughout this entire time period, which is at least double the population density rates of the other two counties.
+- Monroe has very strong positive population throughout this entire time period, which is at least double the population change rates of the other two counties.
 
-- Fairfield maintains strong positive population density change throughout this time period.
+- Fairfield maintains strong positive population change throughout this time period.
 
 - Issaquena tends to have peaks around the 8am PST time, which is 10am local time.
 
 ## Community Characteristics of Affected Counties
+The demographic characteristics examined in this report do not reveal a strong linear relationship with population change.
 
-```{r}
+- Counties experiencing the largest increases and decreases in population included both small and large communities, counties with relatively low and high median household incomes, and areas with widely varying poverty rates, age structures, and levels of vehicle access.
 
-make_demographics_table <- function(file_name, 
-                                    map_date = NULL,
-                                    map_hr = NULL,
-                                    date_col = "ds",
-                                    value_col = "percent_change",
-                                    n_counties = 15,
-                                    output_table_name = NULL,
-                                    table_title = "Demographic Profile of Most Impacted Counties", desc = T,
-                                    source) {
-  
-  # Read file from Outputs folder
-  df <- read_csv(
-    here("Outputs", file_name),
-    show_col_types = FALSE
-  )
-  
-  # Convert date column
-  df <- df |>
-    mutate("{date_col}" := as.Date(.data[[date_col]]))
-  
-  # Use latest date by default
-  if (is.null(map_date)) {
-    map_date <- max(df[[date_col]], na.rm = TRUE)
-  } else {
-    map_date <- as.Date(map_date)
-  }
-  
-  # Summarize to county level
-  county_demo <- df |>
-    filter(.data[[date_col]] == map_date,
-           hour == map_hr)
-  
-  # Create gt table
-  demo_table <- county_demo |>
-    select(
-      County = county_name,
-      State = county_state,
-      `Population Density Change` = percent_change,
-      `Total Population` = total_population,
-      `Median Household Income` = median_income,
-      `Poverty Rate` = poverty_rate,
-      `% Age 65+` = pct_age_65_plus,
-      `% No Vehicle Access` = pct_no_vehicle
-    )
-  demo_table <- arrange(demo_table, `Population Density Change`)
-  if (desc){
-    demo_table <- arrange(demo_table, desc(`Population Density Change`))
-  }
-  demo_table |>
-  head(n_counties) |>
-  gt() |>
-  tab_header(
-    title = table_title,
-    subtitle = paste0("Source: ", source)
-  ) |>
-  # Wrap columns
-  cols_width(
-    County ~ px(120),
-    State ~ px(120),
-    `Population Density Change` ~ px(70),
-    `Total Population` ~ px(70),
-    `Median Household Income` ~ px(70),
-    everything() ~ px(50)
-  ) |>
-  tab_options(
-    table.font.size = px(9),
-    heading.title.font.size = px(16),
-    heading.subtitle.font.size = px(9),
-    data_row.padding = px(25),
-    column_labels.padding = px(0),
-    table.width = pct(100)
-  ) |>
-  fmt_number(
-    columns = `Population Density Change`,
-    decimals = 1,
-    suffixing = FALSE
-  ) |>
-  fmt_number(
-    columns = `Total Population`,
-    decimals = 0,
-    use_seps = TRUE
-  ) |>
-  fmt_currency(
-    columns = `Median Household Income`,
-    currency = "USD",
-    decimals = 0
-  ) |>
-  fmt_percent(
-    columns = c(`Poverty Rate`, `% Age 65+`, `% No Vehicle Access`),
-    decimals = 1
-  ) |>
-  cols_align(
-    align = "center",
-    columns = everything()
-  ) |>
-  opt_table_font(
-    font = list(
-      google_font("Roboto Condensed"),
-      default_fonts()
-    )
-  )
-}
+- Some counties with substantial population influxes, such as Quitman County, Mississippi, had high poverty rates and relatively low incomes. Others, such as Osage County, Missouri, had much higher incomes and lower poverty rates.(@tbl-bing02-inc)
 
-demographics_table_gt <- function(){
-  
-}
-```
+- Counties with the largest population declines generally exhibited high levels of vehicle access, but this pattern was not consistent enough to suggest a strong association.(@tbl-bing02-dec)
 
-```{r}
-# Read file from Outputs folder
-  df <- read_csv(
-    here("Outputs", "tk_facebook_pop_aggregated_bing.csv"),
-    show_col_types = FALSE
-  )
-  
-  # Convert date column
-  county_demo <- df |>
-    mutate(ds = as.POSIXct(
-          paste(ds, hour),
-          format = "%Y-%m-%d %H%M",
-          tz = "America/Los_Angeles"
-        ))
-  
-  demo_table <- county_demo |>
-    select(
-      County = county_name,
-      State = county_state,
-      `Population Density Change` = percent_change,
-      `Total Population` = total_population,
-      `Median Household Income` = median_income,
-      `Poverty Rate` = poverty_rate,
-      `% Age 65+` = pct_age_65_plus,
-      `% No Vehicle Access` = pct_no_vehicle,
-      Day = ds
-    ) |>
-    mutate(Day = Day - as.POSIXct("2026-02-02 0000",
-          format = "%Y-%m-%d %H%M",
-          tz = "America/Los_Angeles"),
-          Day = Day/86400)
-```
+- No single demographic characteristic considered in this analysis appears to be a strong predictor of county-level population change during Winter Storm Fern. (@fig-corr)
 
-```{r fig-corr-dm, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables. Population density change is the percent change in Facebook Location Services-enabled user population counts per Bing tile in each county at 8-hour intervals. All demographic variables are already at the county level from the American Community Survey in 2022. Days are the 1st to 10th day of data collection, from Feb 2nd to Feb 12. These counties are from 15 Southern states.", fig.height=8, warning = F, output = T}
-
-vars <- c(
-  "Total Population",
-  "Median Household Income",
-  "Poverty Rate",
-  "% Age 65+",
-  "% No Vehicle Access"
-)
-
-# Create scatterplots with correlation in title
-plot_list <- lapply(vars, function(v) {
-
-  # Calculate correlation
-  corr <- cor(
-    demo_table[[v]],
-    demo_table$`Population Density Change`,
-    use = "complete.obs"
-  )
-
-  ggplot(demo_table, aes(
-    x = .data[[v]],
-    y = `Population Density Change`,
-    fill = Day
-  )) +
-    geom_point(
-      shape = 21,
-      size = 3,
-      alpha = 0.1,
-      color = "black"
-    ) +
-    scale_fill_gradient(
-      low = "orange",
-      high = "blue"
-    ) +
-    labs(
-      title = bquote(hat(rho) == .(round(corr, 2))),
-      x = v,
-      y = "Population Density Change"
-    ) +
-    theme_minimal() +
-    theme(
-      legend.position = "bottom"
-    )
-})
-
-plot_list[[6]] <- patchwork::plot_spacer()
-
-# Combine with shared legend
-wrap_plots(plot_list, ncol = 2, guides = "collect") &
-  theme(
-    legend.position = "bottom"
-  )
-```
+- These findings suggest that the observed changes in population were likely influenced by a combination of local geographic, social, and disaster-specific factors rather than by any one demographic variable alone.
 
 ## Conclusion
-Winter Storm Fern produced measurable shifts in population density across affected counties in the United States of America. The analysis shows that these changes varied significantly across both geography and time, with some counties experiencing substantially greater disruption than others.
+Winter Storm Fern produced measurable shifts in population across affected counties in the United States of America. The analysis shows that these changes varied significantly across both geography and time, with some counties experiencing substantially greater disruption than others.
 
-Combining population density observations with demographic information provides a more complete picture of community impacts than either source alone. Together, these data offer emergency managers an additional tool for understanding disaster impacts, monitoring recovery, and supporting future preparedness efforts.
+Combining population observations with demographic information provides a more complete picture of community impacts than either source alone. Together, these data offer emergency managers an additional tool for understanding disaster impacts, monitoring recovery, and supporting future preparedness efforts.
+
+{{<pagebreak>}}
 
 
 # Comprehensive Situation Report
@@ -626,7 +441,7 @@ bing_vs_admin_map <- function(date_col = "ds",
                                     selected_date = NULL,
                               selected_hour = NULL,
                                     output_plot_name = NULL,
-                                    title_prefix = "Population Density Change (%)") {
+                                    title_prefix = "Population Change (%)") {
   
   # Read file
   df_bing <- read_csv(
@@ -758,26 +573,26 @@ bing_vs_admin_map <- function(date_col = "ds",
 
 # Summary
 
-A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23rd 2026 and continued through January 26th 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the East Coast. Several states experienced network outages and extremely cold temperatures.  For example, temperatures in Lexington, Kentucky fell to −16 degrees Fahrenheit (including wind chill) ([@kentucky_fern2026](https://www.kentucky.com/news/weather-news/article314454683.html)). Emergency declarations were issued [^emergency] ([@crs_in12644](https://www.congress.gov/crs-product/IN12644) ). Power outages due to downed trees and ice occurred in Southern States, such as Texas, Louisiana, Mississippi, and Tennessee. From Maine to New Mexico, states experienced significant snowfall and sleet. As of January 29th, there were up to 115 fatalities across 20 states after this winter storm, and approximately 2.5 million customers experienced power outages across the country ([@kothari2026winterstorm](https://watchers.news/2026/01/29/over-100-fatalities-confirmed-after-major-january-2026-u-s-winter-storm/)). Verisk, who are catastrophe risk modelling specialists, estimated 
+A major American winter storm, often referred to as Winter Storm Fern, started on Friday, January 23, 2026 and continued through January 26, 2026. The storm brought heavy snow and freezing rain to several U.S. states, ranging from the southern plains to the East Coast. Several states experienced network outages and extremely cold temperatures.  For example, temperatures in Lexington, Kentucky fell to −16 degrees Fahrenheit (including wind chill) ([@kentucky_fern2026](https://www.kentucky.com/news/weather-news/article314454683.html)). Emergency declarations were issued [^emergency] ([@crs_in12644](https://www.congress.gov/crs-product/IN12644) ). Power outages due to downed trees and ice occurred in Southern States, such as Texas, Louisiana, Mississippi, and Tennessee. From Maine to New Mexico, states experienced significant snowfall and sleet. As of January 29th, there were up to 115 fatalities across 20 states after this winter storm, and approximately 2.5 million customers experienced power outages across the country ([@kothari2026winterstorm](https://watchers.news/2026/01/29/over-100-fatalities-confirmed-after-major-january-2026-u-s-winter-storm/)). Verisk, who are catastrophe risk modelling specialists, estimated 
 a total of $4 billion in industry losses while 14 states could each exceed \$50 million in insured losses ([@evans2026fern](https://www.artemis.bm/news/verisk-estimates-winter-storm-fern-insured-losses-could-reach-4bn/)).
 
 [^emergency]: Arkansas, Georgia, Indiana, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, South Carolina, Tennessee, Virginia, and West Virginia.
 
 The following visualizations are developed based on Meta AI for Good's data through Facebook with a focus on Tennessee, Kentucky and surrounding states. The data covers population movement during the collection period of January 30 to February 12. These datasets use location activity from Facebook users to estimate how populations shift during a crisis. Data do not represent the entire population in the area. Counts of people within a certain region are recorded at 8-hour intervals in this dataset. The counts during the crisis are compared to the counts at a baseline, which are the counts in the same region 45 days prior to data collection. These regions are either Bing tiles, what are about 1.5 x 1.5 mile blocks, or administrative regions as determined by [GADM](https://gadm.org). These counts are aggregated to the county level for this analysis.
 
-The main findings suggest that population change during the post-storm period was geographically concentrated rather than evenly distributed across the region. The strongest positive changes in population (i.e. counties with a population influx at the time) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. Meanwhile, negative changes (i.e. counties with an average exodus occurred at the time) were experienced most strongly in Sevier County, Tennessee. Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. However, the average- and low-change counties do have a substantial drop in population density chang on February 9th.
+The main findings suggest that population change during the post-storm period was geographically concentrated rather than evenly distributed across the region. The strongest positive changes in population (i.e. counties with a population influx at the time) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. Meanwhile, negative changes (i.e. counties with an average exodus occurred at the time) were experienced most strongly in Sevier County, Tennessee. Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. However, the average- and low-change counties do have a substantial drop in population change on February 9th.
 
 
 # How the Data Are Constructed
 
-The Facebook data used in this report comes from Meta’s Data for Good crisis datasets. In plain terms, these datasets use location activity from Facebook users or Facebook business Pages to estimate how population shifts during a crisis. The data does not represent everyone in the affected area: for population and movement datasets, it only represents Facebook app users who have Location Services enabled. For business activity, it represents qualifying Facebook Business Pages with enough activity to be included while preserving privacy. 
+The Facebook data used in this report comes from Meta’s Data for Good crisis datasets. In plain terms, these datasets use location activity from Facebook users to estimate how population shifts during a crisis. The data does not represent everyone in the affected area: for population and movement datasets, it only represents Facebook app users who have Location Services enabled. 
 
 The data is constructed by comparing what is observed during the crisis period to what was typical before the crisis. Namely, population movements during the storm is compared to a pre-crisis baseline of 45-days prior to data collection. Because the data is relative to a baseline, the main signal is not the raw count itself, but whether a place is above or below its pre-crisis level.
 
 
 Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time (PST). This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, we report time windows in Eastern Time (EST). Business activity is reported daily, based on the date value in the dataset. 
 
-Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. **For the rest of this report, we use the Bing tile version as the primary aggregation source because Bing tiles are strictly defined grid cells with clear latitude and longitude coordinates.** This makes the spatial assignment process more transparent and reproducible. In contrast, the administrative-region datasets are aggregated using boundaries provided to Meta by [GADM](https://gadm.org). Because we do not have direct access to the exact GADM polygons used by Meta for this aggregation, it is harder to verify or reproduce the administrative-region boundaries precisely.
+Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. **For the rest of this report, we use the Bing tile version as the primary aggregation source because Bing tiles are strictly defined grid cells with clear latitude and longitude coordinates, and they are more granular than administrative regions.** This makes the spatial assignment process more transparent and reproducible. In contrast, the administrative-region datasets are aggregated using boundaries provided to Meta by [GADM](https://gadm.org). Because we do not have direct access to the exact GADM polygons used by Meta for this aggregation, it is harder to verify or reproduce the administrative-region boundaries precisely.
 
 When the data is provided as Bing tiles, each observation is tied to a grid cell with a latitude and longitude, which is defined as the polygon centroid point. We assign each Bing centroid point to the county that contains it. This allows the tile-level data to be summarized at the county level while preserving a clear record of how the geographic aggregation was performed.
 
@@ -792,7 +607,7 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 - **Population Change  (%)**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline number (plus a small value, usually 1)
 
-- **Time Windows**: aggregated over 3 fixed 8-hour time windows, beginning at 00:00, 08:00 and 16:00 PST, that represent changes in population density
+- **Time Windows**: aggregated over 3 fixed 8-hour time windows, beginning at 00:00, 08:00 and 16:00 PST, that represent changes in population
 
 - **Bing Tiles**: Bing tiles divide the map into a grid of smaller spatial units. Each tile is identified by tile coordinates and a quadkey, which uniquely identifies a tile at a specific level of detail [@microsoft_bing_tile_system]. In the Meta crisis datasets used here, Bing tile level 14 is roughly 1.5 miles on each side near the equator.
 
@@ -800,22 +615,6 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 - **Percent change**: Percent change in population counts of Facebook app users who have turned on the Location Services device setting on their mobile device and are along the vector defined by the starting Bing tile and ending Bing tile, calculated as the polygon movement at a given time window minus the baseline number, divided by the baseline number.
 
-For county-level analyses,
-
-$$
-\text{Percent Change}_{cw} =
-\frac{
-\sum_{i \in \text{Bing}_c} n_{\text{crisis},ciw}
--
-\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}
-}{
-\sum_{i \in \text{Bing}_c} n_{\text{baseline},ci}
-+ 1
-}
-\times 100
-$$
-
-where $c$ denotes a county, $w$ denotes an 8-hour reporting window, and ${Bing}_c$ denotes the set of Bing tiles assigned to county $c$ (based on centroid location).
 
 # Aggregation Choices
 
@@ -825,7 +624,7 @@ Bing tile observations are assigned to counties using the latitude and longitude
 
 For the county-level analysis, this report does not use the original tile-level `percent_change` field as the final county-level measure. Instead, the original `percent_change` column is preserved as `given_percent_change`, and a new county-level `percent_change` is calculated from the underlying baseline and crisis counts.
 
-Some rows have missing values for `n_baseline` or `n_crisis` because of Meta’s privacy protections around small counts (counts less than or eual to 10 are not reported) . To avoid dropping these rows entirely, missing `n_baseline` values are imputed as 3 and missing `n_crisis` values are imputed as 9. See Table 6 for percentage of data imputed.
+Some rows have missing values for `n_baseline` or `n_crisis` because of Meta’s privacy protections around small counts (counts less than or eual to 10 are not reported) . To avoid dropping these rows entirely, missing `n_baseline` values are imputed as 3 and missing `n_crisis` values are imputed as 9. See @tbl-imputation-summary-window for percentage of data imputed.
 
 After imputation, observations are summarized by county and reporting window. Because the data may include multiple observations within a single day, the reporting window is defined using both the date and the time-window information available in the data. For each county-window pair, the baseline counts are summed across all Bing tile observations in that county and reporting window, and the crisis counts are summed across those same observations. The county-window percent change is then calculated as:
 
@@ -842,7 +641,7 @@ $$\text{Percent Change}_{cw} =
 
 where $c$ is the county, $w$ is the reporting window and ${Bing}_c$ denotes the set of Bing tiles assigned to county $c$ (based on centroid location). The small value added to the denominator follows the logic in the Meta documentation and prevents division by very small baseline values.
 
-This means the maps and tables  represent county-level population density change based on aggregated counts. 
+This means the maps and tables represent county-level population change based on aggregated counts. 
 
 The aggregation method depends on the type of variable being summarized. For count variables, such as `n_baseline` and `n_crisis`, summing is appropriate because the goal is to estimate the total observed Facebook users across tiles within a county. For relative variables, such as `given_percent_change`, or ratios, averaging can still be useful for descriptive comparisons, but these are not used as the main county-level percent change measure in this report.
 
@@ -850,7 +649,7 @@ For movement data, origin and destination counties are kept separate. Each row r
 
 # Outside Data Added
 
-In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey in 2022 [@acs]. This demographic data was incorporated with the use of the `tidycensus` package [@tidycensus](https://walker-data.com/tidycensus/). This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
+In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey in 2022 [@acs](https://www.census.gov/programs-surveys/acs) . This demographic data was incorporated with the use of the `tidycensus` package [@tidycensus](https://walker-data.com/tidycensus/). This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
 
 The demographic data is joined using GEOID, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
 
@@ -860,7 +659,7 @@ The demographic data is joined using GEOID, a standardized county identifier. Th
 
 These datasets should be interpreted as indicators of crisis-related change, not exact measures of the full population. The population and movement data only include Facebook users with Location Services enabled, so the sample may not represent all residents equally. Areas with fewer Facebook users or lower Location Services usage may be less reliable.
 
-Privacy protections also affect interpretation. Small counts (less than 11 users) are removed, which can especially affect rural areas. For movement data, this means it is not reliable to calculate exact net flows by simply adding inbound and outbound movement, because some small movement vectors are excluded. 
+Privacy protections also affect interpretation. Small counts at the Bing tile level (less than 11 users) are removed, which can especially affect rural areas. For movement data, this means it is not reliable to calculate exact net flows by simply adding inbound and outbound movement, because some small movement vectors are excluded. To mitigate the effects of these missing values, this report employs a simple imputation procedure. The resulting imputations affect only about 0.06% of Bing tile observations and account for approximately 0.1–0.4% of total population counts in the selected reporting windows (see @tbl-imputation-summary-window). 
 
 The baseline period is limited to the pre-crisis period available to Meta. This means the analysis does not have a long historical record of pre-crisis behavior. As a result, seasonal changes, holidays, or unusual pre-crisis conditions may affect the baseline. The data is useful for rapid situational awareness, but it should not be interpreted as a complete long-term population or economic dataset.
 
@@ -874,22 +673,22 @@ Finally, the data is time-limited. The documentation notes that some datasets ar
 ## % Population Change
 
 
-```{r fig-pop-bing, fig.cap = "Red shades represent population decreases relative to baseline number (population exodus), whereas blue shades represent population increases relative to baseline number (population influx). Population changes are measured relative to a baseline computed from the 45 days preceding the event. When showing population density change with Bing tiles, there is little negativechanges at these two dates.", output = T}
+```{r fig-pop-bing, fig.cap = "Red shades represent counties where the population decreased relative to the baseline number (i.e. , a population exodus), whereas blue shades represent population increases relative to baseline number (i.e., population influx). Population changes are measured relative to a baseline computed from the 45 days preceding the event. We can see there is little negative changes at these two dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
   selected_hour = c("0000", "1600"),
-  title_prefix = "Population Change (%) - Bing Tiles"
+  title_prefix = "County-Level Population Change (%) - Bing Tiles"
 )
 ```
 
 **Takeaways** (@fig-pop-bing)
 
-- The overall spatial pattern appears fairly stable between the two dates
+- The overall spatial pattern appears fairly stable between the two dates.
 
-- There is little visible negative population-density change.
+- There is little visible negative population change (i.e., exodus).
 
-- On February 2nd 12am PST, the counties with the most increased population density are (@tbl-bing02-inc):
+- On February 2nd 12am PST, the counties with the most increased population are (@tbl-bing02-inc):
 
   - Perry, Alabama (103.0%)
   
@@ -897,7 +696,7 @@ make_percent_change_map(
   
   - Hampton, South Carolina (57.4%)
 
-- On February 2nd, the counties with the most decreased population density are (@tbl-bing02-dec):
+- On February 2nd, the counties with the most decreased population are (@tbl-bing02-dec):
 
   - Sevier, Tennessee (-22.8%)
   
@@ -905,7 +704,7 @@ make_percent_change_map(
   
   - Swain, North Carolina (-12.4%)
 
-- On February 12th, the counties with the most increased population density are (@tbl-bing12-inc):
+- On February 12th, the counties with the most increased population are (@tbl-bing12-inc):
 
   - Fairfield, South Carolina (31.3%)
   
@@ -913,7 +712,7 @@ make_percent_change_map(
   
   - Kemper, Mississippi (23.3%)
   
-- On February 12th, the counties with the most decreased population density are (@tbl-bing12-dec):
+- On February 12th, the counties with the most decreased population are (@tbl-bing12-dec):
 
   - Sevier, Tenneessee (-21.7%)
   
@@ -921,13 +720,15 @@ make_percent_change_map(
   
   - Laurens, Georgia (-11.8%)
   
+{{< pagebreak >}}
+
 ## Time Series of Movement
 
 The counties are grouped by percent population change over the recording period.[^pct-change]
 
 [^pct-change]: See "Percent Change" in Facebook Data Definitions
 
-```{r fig-TS-high, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute average percent change in population. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
+```{r fig-TS-high, fig.cap = "The figure shows that “highest change” includes both large increases and large decreases when counties are selected using largest absolute percent change in population. The time period is February 2nd to February 13th at 8hr intervals at 3am EST, 11am EST, and 7pm EST.", output = T}
 high_time <- make_county_time_data(high_counties)
 
 plot2 <- plot_county_time_series(
@@ -943,15 +744,15 @@ combine_map_and_plot(plot2, map2,
 
 **Takeaways** (@fig-TS-high)
 
-- The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes, but each county has starkly different patterns of population density change.
+- The time series makes clear that the largest changes are persistent over multiple days, not just one-day spikes, but each county has starkly different patterns of population change.
 
-- Monroe county has very strong positive population density throughout this entire time period, which is at least double the population density rates of the other two counties.
+- Monroe county has very strong positive population change throughout this entire time period, which is at least double the population change rates of the other two counties.
 
-- Fairfield county maintains strong positive population density change throughout this time period.
+- Fairfield county maintains strong positive population change throughout this time period.
 
 - Issaquena tends to have peaks around the 11am EST time, which is 10am local time.
 
-```{r fig-TS-medium, fig.cap = "The three counties with average change have more variation in population change with both positive and negative changes.", output = T}
+```{r fig-TS-medium, fig.cap = "The figure shows that “average change” includes both large increases and large decreases when counties are selected using median absolute percent change in population. The three counties with average change have more variation in population change with both positive and negative changes.", output = T}
 average_time <- make_county_time_data(average_counties)
 
 plot3 <- plot_county_time_series(
@@ -968,15 +769,15 @@ combine_map_and_plot(plot3, map3,
 
 - These counties provide a useful comparison group for interpreting the more extreme counties.
 
-- In comparison to the high-change counties, these three counties have their percentage population  change constrained within [-10%, 10%], indicating much lower rates of population density change.
+- In comparison to the high-change counties, these three counties have their percentage population  change constrained within [-10%, 10%], indicating much lower rates of population change.
 
-- All counties have a drop in population density change at February 9th of similar magnitudes.
+- All counties have a drop in population change at February 9th of similar magnitudes.
 
 - Fayette, Ohio and Ohio, Kentucky follow similar trends in variation, but Ohio, Kentucky has a noticable spike on February 8th.
 
-- Union county is the only county of these three that has negative population density rates in this time periods.
+- Union county is the only county of these three that has negative population rates in this time periods.
 
-```{r fig-TS-low, fig.cap = "The three counties with the lowest change have a notable drop into extreme negative population density change on February 9th.",  output = T}
+```{r fig-TS-low, fig.cap = "The figure shows that “lowest change” includes one large decrease when counties are selected using lowest absolute percent change in population.The three counties with the lowest change have a notable drop into extreme negative population change on February 9th.",  output = T}
 low_time <- make_county_time_data(low_counties)
 
 plot4 <- plot_county_time_series(
@@ -993,7 +794,7 @@ combine_map_and_plot(plot4, map4,
 
 - These three counties follow a similar pattern with relatively stable populations around zero and a sharp drop at February 9th.
 
-- These counties never have strong positive population density change, implying that populations may have either entered before this time period or left after this time period, because the constant negative change indicates people leaving these counties.
+- These counties never have strong positive population change, implying that populations may have either entered before this time period or left after this time period, because the constant negative change indicates people leaving these counties.
 
 {{<pagebreak>}}
 
@@ -1028,15 +829,19 @@ county_flows |>
   )
 
 ```
+
+
+
 **Takeaways** (@tbl-summary-table)
 
 - The table is more useful as a data-quality warning than as a substantive movement analysis.
 
 - Because movement vectors with small counts can be suppressed, these low-flow values should not be interpreted as exact zero movement.
 
-{{< pagebreak >}}
+
 
 # Demographic Profile
+
 
 ```{r}
 
@@ -1077,16 +882,16 @@ make_demographics_table <- function(file_name,
     select(
       County = county_name,
       State = county_state,
-      `Population Density Change` = percent_change,
+      `Population Change` = percent_change,
       `Total Population` = total_population,
       `Median Household Income` = median_income,
       `Poverty Rate` = poverty_rate,
       `% Age 65+` = pct_age_65_plus,
       `% No Vehicle Access` = pct_no_vehicle
     )
-  demo_table <- arrange(demo_table, `Population Density Change`)
+  demo_table <- arrange(demo_table, `Population Change`)
   if (desc){
-    demo_table <- arrange(demo_table, desc(`Population Density Change`))
+    demo_table <- arrange(demo_table, desc(`Population Change`))
   }
   demo_table |>
   head(n_counties) |>
@@ -1099,7 +904,7 @@ make_demographics_table <- function(file_name,
   cols_width(
     County ~ px(120),
     State ~ px(120),
-    `Population Density Change` ~ px(70),
+    `Population Change` ~ px(70),
     `Total Population` ~ px(70),
     `Median Household Income` ~ px(70),
     everything() ~ px(50)
@@ -1113,7 +918,7 @@ make_demographics_table <- function(file_name,
     table.width = pct(100)
   ) |>
   fmt_number(
-    columns = `Population Density Change`,
+    columns = `Population Change`,
     decimals = 1,
     suffixing = FALSE
   ) |>
@@ -1151,7 +956,7 @@ demographics_table_gt <- function(){
 
 ```{r, output = T}
 #| label: tbl-bing02-inc
-#| tbl-cap: "There are a few counties with high population change but low total population. All demographic information comes from the American Community Survey in 2022. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county."
+#| tbl-cap: "There are a few counties with high population change but low total population. All demographic information comes from the American Community Survey in 2022. County-level population change is calculated from aggregated baseline and crisis counts across all Bing tiles assigned to each county and reporting window."
 
 
 make_demographics_table(
@@ -1166,7 +971,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing02-dec
-#| tbl-cap: "Most of the counties with the lowest population change have fairly high vehicular access. All demographic information comes from the American Community Survey in 2022. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county."
+#| tbl-cap: "Most of the counties with the lowest population change have fairly high vehicular access. All demographic information comes from the American Community Survey in 2022. County-level population change is calculated from aggregated baseline and crisis counts across all Bing tiles assigned to each county and reporting window."
 
 
 make_demographics_table(
@@ -1182,7 +987,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing12-inc
-#| tbl-cap: "Issaquena has the highest population but notably small population size. All demographic information comes from the American Community Survey in 2022. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county."
+#| tbl-cap: "Issaquena has the highest population but notably small population size. All demographic information comes from the American Community Survey in 2022. County-level population change is calculated from aggregated baseline and crisis counts across all Bing tiles assigned to each county and reporting window."
 
 
 make_demographics_table(
@@ -1197,7 +1002,7 @@ make_demographics_table(
 
 ```{r, output = T}
 #| label: tbl-bing12-dec
-#| tbl-cap: "Similar to Feb 2nd, the counties with strong negative population change also have high levels of vehicular access. All demographic information comes from the American Community Survey in 2022. Population density change is the average of the Percent change in Facebook Location Services-enabled user population counts per Bing tile in each county."
+#| tbl-cap: "Similar to Feb 2nd, the counties with strong negative population change also have high levels of vehicular access. All demographic information comes from the American Community Survey in 2022. County-level population change is calculated from aggregated baseline and crisis counts across all Bing tiles assigned to each county and reporting window."
 
 
 make_demographics_table(
@@ -1234,7 +1039,7 @@ make_demographics_table(
     select(
       County = county_name,
       State = county_state,
-      `Population Density Change` = percent_change,
+      `Population Change` = percent_change,
       `Total Population` = total_population,
       `Median Household Income` = median_income,
       `Poverty Rate` = poverty_rate,
@@ -1248,7 +1053,7 @@ make_demographics_table(
           Day = Day/86400)
 ```
 
-```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population density change and the other demographic variables. Population density change is the percent change in Facebook Location Services-enabled user population counts per Bing tile in each county at 8-hour intervals. All demographic variables are already at the county level from the American Community Survey in 2022. Days are the 1st to 10th day of data collection, from Feb 2nd to Feb 12. These counties are from 15 Southern states.", fig.height=8, warning = F, output = T}
+```{r fig-corr, fig.cap = "There does not seem to be strong linear correlations between population change and the other demographic variables. Population change is the percent change in Facebook Location Services-enabled user population counts per Bing tile in each county at 8-hour intervals. All demographic variables are already at the county level from the American Community Survey in 2022. Days are the 1st to 10th day of data collection, from Feb 2nd to Feb 12. These counties are from 15 Southern states.", fig.height=8, warning = F, output = T}
 
 vars <- c(
   "Total Population",
@@ -1264,13 +1069,13 @@ plot_list <- lapply(vars, function(v) {
   # Calculate correlation
   corr <- cor(
     demo_table[[v]],
-    demo_table$`Population Density Change`,
+    demo_table$`Population Change`,
     use = "complete.obs"
   )
 
   ggplot(demo_table, aes(
     x = .data[[v]],
-    y = `Population Density Change`,
+    y = `Population Change`,
     fill = Day
   )) +
     geom_point(
@@ -1286,7 +1091,7 @@ plot_list <- lapply(vars, function(v) {
     labs(
       title = bquote(hat(rho) == .(round(corr, 2))),
       x = v,
-      y = "Population Density Change"
+      y = "Population Change"
     ) +
     theme_minimal() +
     theme(
