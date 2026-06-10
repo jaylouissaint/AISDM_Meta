@@ -885,7 +885,7 @@ make_demographics_table <- function(file_name,
       `Population Change (%)` = percent_change,
       `Total Population` = total_population,
       `Median Household Income` = median_income,
-      `Poverty Rate` = poverty_rate,
+      `Poverty Rate (%)` = poverty_rate,
       `% Age 65+` = pct_age_65_plus,
       `% No Vehicle Access` = pct_no_vehicle
     )
@@ -933,7 +933,7 @@ make_demographics_table <- function(file_name,
     decimals = 0
   ) |>
   fmt_percent(
-    columns = c(`Poverty Rate`, `% Age 65+`, `% No Vehicle Access`),
+    columns = c(`Poverty Rate (%)`, `% Age 65+`, `% No Vehicle Access`),
     decimals = 1
   ) |>
   cols_align(
