@@ -32,11 +32,13 @@ counties["county_geoid"] = counties["county_geoid"].astype(str)
 # -------------------------
 # Create datetime column
 # -------------------------
-df["datetime"] = pd.to_datetime(
-    df["ds"].astype(str)
-    + " "
-    + df["hour"].astype(str).str.zfill(4),
-    format="%Y-%m-%d %H%M"
+df["datetime"] = (
+    pd.to_datetime(
+        df["ds"].astype(str) + " " + df["hour"].astype(str).str.zfill(4),
+        format="%Y-%m-%d %H%M"
+    )
+    .dt.tz_localize("America/Los_Angeles")
+    .dt.tz_convert("America/New_York")
 )
 
 times = sorted(df["datetime"].unique())
@@ -152,7 +154,7 @@ for i, dt in enumerate(times):
 
     ax.set_axis_off()
     ax.set_title(
-        dt.strftime("%Y-%m-%d %H:%M"),
+        dt.strftime("%Y-%m-%d %I:%M %p %Z"),
         fontsize=14
     )
 
