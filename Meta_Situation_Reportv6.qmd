@@ -1,7 +1,11 @@
 ---
 title: "Winter Storm Fern Situation Report"
 subtitle: "Date of Preparation: June 2026"
-author: "Jay Louissaint, Nikita Jayaprakash, Selina Carter"
+author:
+  - name: "Jay Louissaint"
+  - name: "Nikita Jayaprakash"
+  - name: "Selina Carter"
+thanks: "This report was prepared as part of the AI-SDM Fellowship at Carnegie Mellon University in collaboration with the Department of Statistics and Data Science."
 execute: 
   warning: false
   message: false
@@ -49,10 +53,9 @@ library(tigris)
 ```
 **1.** Winter Storm Fern (January-February 2026) affected large portions of the southeastern U.S, producing snow, ice, transportation disruptions, power outages, and fatalities across multiple states. 
 
-
 **2.** Population change during the storm period was geographically concentrated in certain key counties rather than evenly distributed across the region. 
   **a.** The strongest positive changes in population (i.e. counties with a population *influx* throughout the 2 week aftermath) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. 
-  **b.** Negative changes (i.e. counties with an average *exodus*) were experienced most strongly in Sevier County, Tennessee. 
+  **b.** Negative changes (i.e. counties with an average *exodus* throughout the 2 week aftermath) were experienced most strongly in Sevier County, Tennessee. 
   **c.** Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. 
   
 **3.** All counties do have a substantial drop in population  change on February 9th, which we attribute to network outages.
@@ -569,7 +572,7 @@ a total of $4 billion in industry losses while 14 states could each exceed \$50 
 
 The following visualizations are developed based on Meta AI for Good's data through Facebook with a focus on Tennessee, Kentucky and surrounding states. The data covers population movement during the collection period of January 30 to February 12. These datasets use location activity from Facebook users to estimate how populations shift during a crisis. Data do not represent the entire population in the area. Counts of people within a certain region are recorded at 8-hour intervals in this dataset. The counts during the crisis are compared to the counts at a baseline, which are the counts in the same region 45 days prior to data collection. These regions are either Bing tiles, what are about 1.5 x 1.5 mile blocks, or administrative regions as determined by [GADM](https://gadm.org). These counts are aggregated to the county level for this analysis.
 
-The main findings suggest that population change during the post-storm period was geographically concentrated rather than evenly distributed across the region. The strongest positive changes in population (i.e. counties with a population influx at the time) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. Meanwhile, negative changes (i.e. counties with an average exodus occurred at the time) were experienced most strongly in Sevier County, Tennessee. Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. However, the average- and low-change counties do have a substantial drop in population change on February 9th.
+The main findings suggest that population change during the post-storm period was geographically concentrated rather than evenly distributed across the region. The strongest positive changes in population (i.e. counties with a population *influx* throughout the 2 week aftermath) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. Meanwhile, negative changes (i.e. counties with an average *exodus* throughout the 2 week aftermath) were experienced most strongly in Sevier County, Tennessee. Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. However, the average- and low-change counties do have a substantial drop in population change on February 9th.
 
 
 # How the Data Are Constructed
@@ -601,7 +604,7 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 - **Administrative Regions**: the polygon boundaries for administrative regions derived from the [Database of Global Administrative Areas](https://gadm.org), also known as GADM [@gadm]. Note that we do not have access to these polygon shapes; hence we only use Bing tiles in this report.
 
-- **Percent change**: Percent change in population counts of Facebook app users who have turned on the Location Services device setting on their mobile device and are along the vector defined by the starting Bing tile and ending Bing tile, calculated as the polygon movement at a given time window minus the baseline number, divided by the baseline number.
+- **Percent change**: Percent change in population counts of Facebook app users who have turned on the Location Services device setting on their mobile device and are along the vector defined by the starting Bing tile and ending Bing tile, calculated as the polygon movement at a given time window minus the baseline number (i.e., count 45 days prior to data collection period), divided by the baseline number.
 
 
 # Aggregation Choices
@@ -612,7 +615,7 @@ Bing tile observations are assigned to counties using the latitude and longitude
 
 For the county-level analysis, this report does not use the original tile-level `percent_change` field as the final county-level measure. Instead, the original `percent_change` column is preserved as `given_percent_change`, and a new county-level `percent_change` is calculated from the underlying baseline and crisis counts.
 
-Some rows have missing values for `n_baseline` or `n_crisis` because of Meta’s privacy protections around small counts (counts less than or eual to 10 are not reported) . To avoid dropping these rows entirely, missing `n_baseline` values are imputed as 3 and missing `n_crisis` values are imputed as 9. See @tbl-imputation-summary-window for percentage of data imputed.
+Some rows have missing values for `n_baseline` or `n_crisis` because of Meta’s privacy protections around small counts (counts less than or equal to 10 are not reported) . To avoid dropping these rows entirely, missing `n_baseline` values are imputed as 3 and missing `n_crisis` values are imputed as 9. See @tbl-imputation-summary-window for percentage of data imputed.
 
 After imputation, observations are summarized by county and reporting window. Because the data may include multiple observations within a single day, the reporting window is defined using both the date and the time-window information available in the data. For each county-window pair, the baseline counts are summed across all Bing tile observations in that county and reporting window, and the crisis counts are summed across those same observations. The county-window percent change is then calculated as:
 
@@ -637,7 +640,7 @@ For movement data, origin and destination counties are kept separate. Each row r
 
 # Outside Data Added
 
-In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey in 2022 [@acs](https://www.census.gov/programs-surveys/acs) . This demographic data was incorporated with the use of the `tidycensus` package [@tidycensus](https://walker-data.com/tidycensus/). This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
+In addition to the Meta crisis datasets, county-level demographic data was added from the American Community Survey in 2022 ([@acs](https://www.census.gov/programs-surveys/acs)) . This demographic data was incorporated with the use of the `tidycensus` package ([@tidycensus](https://walker-data.com/tidycensus/)). This outside data provides context about the counties affected by the storm, including total population, median household income, poverty rate, share of residents age 65 and older, and share of households without vehicle access. These variables help interpret which communities may be more vulnerable during a crisis.
 
 The demographic data is joined using GEOID, a standardized county identifier. This is important because county names alone are not unique across states. For example, many states have counties with the same name, but each county has a unique GEOID.
 
@@ -647,7 +650,7 @@ The demographic data is joined using GEOID, a standardized county identifier. Th
 
 These datasets should be interpreted as indicators of crisis-related change, not exact measures of the full population. The population and movement data only include Facebook users with Location Services enabled, so the sample may not represent all residents equally. Areas with fewer Facebook users or lower Location Services usage may be less reliable.
 
-Privacy protections also affect interpretation. Small counts at the Bing tile level (less than 11 users) are removed, which can especially affect rural areas. For movement data, this means it is not reliable to calculate exact net flows by simply adding inbound and outbound movement, because some small movement vectors are excluded. To mitigate the effects of these missing values, this report employs a simple imputation procedure. The resulting imputations affect only about 0.06% of Bing tile observations and account for approximately 0.1–0.4% of total population counts in the selected reporting windows (see @tbl-imputation-summary-window). 
+Privacy protections also affect interpretation. Small counts at the Bing tile level (less than 11 users) are removed, which can especially affect rural areas. For movement data, this means it is not reliable to calculate exact net flows by simply adding inbound and outbound movement, because some small movement vectors are excluded. To mitigate the effects of these missing values, this report employs a simple imputation procedure. The resulting imputations affect only about 0.6% of Bing tile observations and account for approximately 0.1–0.4% of total population counts in the selected reporting windows (see @tbl-imputation-summary-window). 
 
 The baseline period is limited to the pre-crisis period available to Meta. This means the analysis does not have a long historical record of pre-crisis behavior. As a result, seasonal changes, holidays, or unusual pre-crisis conditions may affect the baseline. The data is useful for rapid situational awareness, but it should not be interpreted as a complete long-term population or economic dataset.
 
@@ -661,7 +664,7 @@ Finally, the data is time-limited. The documentation notes that some datasets ar
 ## % Population Change
 
 
-```{r fig-pop-bing, fig.cap = "Red shades represent counties where the population decreased relative to the baseline number (i.e. , a population exodus), whereas blue shades represent population increases relative to baseline number (i.e., population influx). Population changes are measured relative to a baseline computed from the 45 days preceding the event. We can see there is little negative changes at these two dates.", output = T}
+```{r fig-pop-bing, fig.cap = "Red shades represent counties where the population decreased relative to the baseline number (i.e. , a population exodus), whereas blue shades represent population increases relative to baseline number (i.e., population influx). Population changes are measured relative to a baseline population level computed from the 45 days preceding the event. We can see there is little negative changes at these two dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
@@ -672,40 +675,28 @@ make_percent_change_map(
 
 **Takeaways** (@fig-pop-bing)
 
-- The overall spatial pattern appears fairly stable between the two dates.
-
-- There is little visible negative population change (i.e., exodus).
-
 - On February 2nd 12am PST, the counties with the most increased population are (@tbl-bing02-inc):
 
   - Perry, Alabama (103.0%)
-  
   - Cleburne, Arkansas (58.1%)
-  
   - Hampton, South Carolina (57.4%)
 
 - On February 2nd, the counties with the most decreased population are (@tbl-bing02-dec):
 
   - Sevier, Tennessee (-22.8%)
-  
   - Carroll, Ohio (-22.7%)
-  
   - Swain, North Carolina (-12.4%)
 
 - On February 12th, the counties with the most increased population are (@tbl-bing12-inc):
 
   - Fairfield, South Carolina (31.3%)
-  
   - Clay, West Virginia (26.2%)
-  
   - Kemper, Mississippi (23.3%)
   
 - On February 12th, the counties with the most decreased population are (@tbl-bing12-dec):
 
   - Sevier, Tenneessee (-21.7%)
-  
   - Alleghany, North Carolina (-14.7%)
-  
   - Laurens, Georgia (-11.8%)
   
 {{< pagebreak >}}
@@ -726,7 +717,7 @@ plot2 <- plot_county_time_series(
 map2 <- make_mini_map(file_name = "tk_facebook_pop_aggregated_bing.csv",
               counties = high_counties$county_name_acs)
 combine_map_and_plot(plot2, map2,
-                     "% Population Change Over Time: Highest-Change Counties")
+                     "% Population Change Over Time: Most Extreme-Change Counties")
 ```
 
 
@@ -759,7 +750,7 @@ combine_map_and_plot(plot3, map3,
 
 - In comparison to the high-change counties, these three counties have their percentage population  change constrained within [-10%, 10%], indicating much lower rates of population change.
 
-- All counties have a drop in population change at February 9th of similar magnitudes.
+- All counties have a drop in population change at February 9th of similar magnitudes. Which could be due to a region-wide network outage affecting Facebook users. 
 
 - Fayette, Ohio and Ohio, Kentucky follow similar trends in variation, but Ohio, Kentucky has a noticable spike on February 8th.
 
@@ -1301,7 +1292,7 @@ make_imputation_summary_table <- function(file_name,
 
 ```{r, output = TRUE}
 #| label: tbl-imputation-summary-window
-#| tbl-cap: "Share of baseline and crisis Facebook user counts and Bing tile observations that originate from imputed values for the selected reporting window. Counts represent the number of Facebook users with Location Services enabled who were observed within a Bing tile during a reporting window. Because the data are reported repeatedly across multiple 8-hour reporting windows, the same user may contribute to counts in multiple observations. To preserve observations suppressed by Meta's privacy protections, missing baseline counts were imputed as 3 and missing crisis counts were imputed as 9. The table reports both the share of total counts and the share of Bing tile observations that were affected by this imputation procedure."
+#| tbl-cap: "Share of baseline and crisis Facebook user counts and Bing tile observations that originate from imputed values for the selected reporting window. Counts represent the number of Facebook users with Location Services enabled who were observed within a Bing tile during a reporting window. Because the data are reported repeatedly across multiple 8-hour reporting windows, the same user may contribute to counts in multiple observations. To preserve observations suppressed by Meta's privacy protections (i.e., Excluding counts for Bing tiles with counts less than 11 ), missing baseline counts were imputed as 3 and missing crisis counts were imputed as 9. The table reports both the share of total counts and the share of Bing tile observations that were affected by this imputation procedure."
 
 make_imputation_summary_table(
   file_name = "tk_facebook_pop_aggregated_bing.csv"
