@@ -51,7 +51,7 @@ library(tigris)
 
 
 **2.** Population change during the storm period was geographically concentrated in certain key counties rather than evenly distributed across the region. 
-  **a.** The strongest positive changes in population (i.e. counties with a population *influx* at the time) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. 
+  **a.** The strongest positive changes in population (i.e. counties with a population *influx* throughout the 2 week aftermath) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. 
   **b.** Negative changes (i.e. counties with an average *exodus*) were experienced most strongly in Sevier County, Tennessee. 
   **c.** Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. 
   
@@ -191,7 +191,7 @@ make_percent_change_map <- function(file_name,
 }
 ```
 
-```{r fig-pop-bing-dm, fig.cap = "Red shades represent counties where the population decreased relative to the baseline number (i.e. , a population exodus), whereas blue shades represent population increases relative to baseline number (i.e., population influx). Population changes are measured relative to a baseline computed from the 45 days preceding the event. We can see there is little negative changes at these two dates.", output = T}
+```{r fig-pop-bing-dm, fig.cap = "Red shades represent counties where the population decreased relative to the baseline number (i.e. , a population exodus), whereas blue shades represent population increases relative to baseline number (i.e., population influx). Population changes are measured relative to a baseline population level computed from the 45 days preceding the event. We can see there is little negative changes at these two dates.", output = T}
 make_percent_change_map(
   file_name = "tk_facebook_pop_aggregated_bing.csv",
   selected_date = c("2026-02-02", "2026-02-12"),
@@ -204,40 +204,28 @@ The map highlights substantial variation in population change across affected co
 
 **Takeaways** (@fig-pop-bing-dm)
 
-- The overall spatial pattern appears fairly stable between the two dates.
-
-- There is little visible negative population change.
-
 - On February 2nd 12am PST, the counties with the most increased population are (@tbl-bing02-inc):
 
   - Perry, Alabama (103.0%)
-  
   - Cleburne, Arkansas (58.1%)
-  
   - Hampton, South Carolina (57.4%)
 
 - On February 2nd, the counties with the most decreased population are (@tbl-bing02-dec):
 
   - Sevier, Tennessee (-22.8%)
-  
   - Carroll, Ohio (-22.7%)
-  
   - Swain, North Carolina (-12.4%)
 
 - On February 12th, the counties with the most increased population are (@tbl-bing12-inc):
 
   - Fairfield, South Carolina (31.3%)
-  
   - Clay, West Virginia (26.2%)
-  
   - Kemper, Mississippi (23.3%)
   
 - On February 12th, the counties with the most decreased population are (@tbl-bing12-dec):
 
   - Sevier, Tenneessee (-21.7%)
-  
   - Alleghany, North Carolina (-14.7%)
-  
   - Laurens, Georgia (-11.8%)
 
 ## Counties Experiencing the Largest Changes
@@ -402,22 +390,18 @@ Counties with the greatest population changes generally experienced sustained de
 - Issaquena tends to have peaks around the 8am PST time, which is 10am local time.
 
 ## Community Characteristics of Affected Counties
-The demographic characteristics examined in this report do not reveal a strong linear relationship with population change.
+The demographic characteristics examined in this report reveal some potential relationships with population change, but no obvious overall patterns.
 
-- Counties experiencing the largest increases and decreases in population included both small and large communities, counties with relatively low and high median household incomes, and areas with widely varying poverty rates, age structures, and levels of vehicle access.
+1. Counties experiencing the largest increases and decreases in population included both small and large communities, counties with relatively low and high median household incomes, and areas with widely varying poverty rates, age structures, and levels of vehicle access.
 
-- Some counties with substantial population influxes, such as Quitman County, Mississippi, had high poverty rates and relatively low incomes. Others, such as Osage County, Missouri, had much higher incomes and lower poverty rates.(@tbl-bing02-inc)
+2. Some counties with substantial population influxes, such as Quitman County, Mississippi, had high poverty rates and relatively low incomes. Others, such as Osage County, Missouri, had much higher incomes and lower poverty rates.(@tbl-bing02-inc)
 
-- Counties with the largest population declines generally exhibited high levels of vehicle access, but this pattern was not consistent enough to suggest a strong association.(@tbl-bing02-dec)
+3. Counties with the largest population declines generally exhibited high levels of vehicle access, but this pattern was not consistent enough to suggest a strong association.(@tbl-bing02-dec)
 
-- No single demographic characteristic considered in this analysis appears to be a strong predictor of county-level population change during Winter Storm Fern. (@fig-corr)
+4. No single demographic characteristic considered in this analysis appears to be a strong individual predictor of county-level population change during Winter Storm Fern. (@fig-corr)
 
-- These findings suggest that the observed changes in population were likely influenced by a combination of local geographic, social, and disaster-specific factors rather than by any one demographic variable alone.
+5. These findings suggest that the observed changes in population were likely influenced by a combination of local geographic, social, and disaster-specific factors rather than by any one demographic variable alone.
 
-## Conclusion
-Winter Storm Fern produced measurable shifts in population across affected counties in the United States of America. The analysis shows that these changes varied significantly across both geography and time, with some counties experiencing substantially greater disruption than others.
-
-Combining population observations with demographic information provides a more complete picture of community impacts than either source alone. Together, these data offer emergency managers an additional tool for understanding disaster impacts, monitoring recovery, and supporting future preparedness efforts.
 
 {{<pagebreak>}}
 
@@ -594,8 +578,7 @@ The Facebook data used in this report comes from Meta’s Data for Good crisis d
 
 The data is constructed by comparing what is observed during the crisis period to what was typical before the crisis. Namely, population movements during the storm is compared to a pre-crisis baseline of 45-days prior to data collection. Because the data is relative to a baseline, the main signal is not the raw count itself, but whether a place is above or below its pre-crisis level.
 
-
-Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time (PST). This means that the time periods do not automatically adjust to local time zones. For Tennessee and Kentucky, we report time windows in Eastern Time (EST). Business activity is reported daily, based on the date value in the dataset. 
+Temporally, the population and movement datasets use fixed 8-hour windows. These windows begin at 00:00, 08:00, and 16:00 Pacific Time (PST). This means that the time periods do not automatically adjust to local time zones. For our analysis, we report time windows in Eastern Time (EST). 
 
 Some Meta crisis datasets are provided directly as Bing tile data, while others are provided as administrative-region data. **For the rest of this report, we use the Bing tile version as the primary aggregation source because Bing tiles are strictly defined grid cells with clear latitude and longitude coordinates, and they are more granular than administrative regions.** This makes the spatial assignment process more transparent and reproducible. In contrast, the administrative-region datasets are aggregated using boundaries provided to Meta by [GADM](https://gadm.org). Because we do not have direct access to the exact GADM polygons used by Meta for this aggregation, it is harder to verify or reproduce the administrative-region boundaries precisely.
 
