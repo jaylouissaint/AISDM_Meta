@@ -1,6 +1,7 @@
 ---
 title: "Winter Storm Fern Situation Report"
-subtitle: "January 2026"
+subtitle: "Date of Preparation: June 2026"
+author: "Jay Louissaint, Nikita Jayaprakash, Selina Carter"
 execute: 
   warning: false
   message: false
@@ -46,11 +47,15 @@ library(dplyr)
 library(sf)
 library(tigris)
 ```
-Winter Storm Fern affected large portions of the southeastern U.S during January 2026, producing snow, ice, transportation disruptions, power outages, and fatalities across multiple states. Understanding how populations shifted during the event can help emergency managers identify areas of disruption, evaluate community impacts, and improve planning for future winter storms.
+**1.** Winter Storm Fern (January-February 2026) affected large portions of the southeastern U.S, producing snow, ice, transportation disruptions, power outages, and fatalities across multiple states. 
 
-This report uses Meta Population During Crisis data to measure changes in population during the storm. The analysis combines population observations with county-level demographic information from the American Community Survey (ACS) to better understand which communities experienced the largest changes and which populations may have faced elevated vulnerability during the event.
 
-The main findings suggest that population change during the post-storm period was geographically concentrated rather than evenly distributed across the region. The strongest positive changes in population (i.e. counties with a population influx at the time) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. Meanwhile, negative changes (i.e. counties with an average exodus occurred at the time) were experienced most strongly in Sevier County, Tennessee. Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. However, the average- and low-change counties do have a substantial drop in population  change on February 9th.
+**2.** Population change during the storm period was geographically concentrated in certain key counties rather than evenly distributed across the region. 
+  **a.** The strongest positive changes in population (i.e. counties with a population *influx* at the time) were repeatedly observed in a small number of counties, especially Perry County, Alabama and Cleburne County, Arkansas. 
+  **b.** Negative changes (i.e. counties with an average *exodus*) were experienced most strongly in Sevier County, Tennessee. 
+  **c.** Temporal results further suggest that the highest-change counties experienced sustained deviations from baseline, while average- and low-change counties generally stayed closer to zero with short-term fluctuations. 
+  
+**3.** All counties do have a substantial drop in population  change on February 9th, which we attribute to network outages.
 
 ## Where Did Population Changes Occur?
 
