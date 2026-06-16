@@ -344,7 +344,11 @@ make_mini_map <- function(file_name,
         xlim = c(county_bbox["xmin"], county_bbox["xmax"]),
         ylim = c(county_bbox["ymin"], county_bbox["ymax"])
       ) +
-      theme_minimal()
+      theme_minimal()+
+      theme(
+  axis.title = element_blank(),
+  axis.text = element_blank(),
+  axis.ticks = element_blank())
   }
   
   create_map()
@@ -595,10 +599,6 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 # Facebook Data Definitions
 
-- **Baseline Ratio**: Number of people using the Facebook app who have turned on the Location Services device setting on their mobile device that are present in a specific tile during the baseline period (45 days prior to crisis start date) divided by number of users in all tiles in the boundary box defining the crisis.
-
-- **Crisis Ratio**: Number of people using the Facebook app who have turned on the Location Services device setting on their mobile device that are present in a specific tile during the 8-hour window divided by number of users in all tiles in the boundary box defining the crisis
-
 - **Population Change  (%)**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline number (plus a small value, usually 1)
 
 - **Time Windows**: aggregated over 3 fixed 8-hour time windows, beginning at 00:00, 08:00 and 16:00 PST, that represent changes in population
@@ -826,112 +826,129 @@ county_flows |>
 # Demographic Profile
 
 ```{r}
-
-make_demographics_table <- function(file_name, 
+make_demographics_table <- function(file_name,
                                     map_date = NULL,
                                     map_hr = NULL,
                                     date_col = "ds",
                                     value_col = "percent_change",
                                     n_counties = 15,
                                     output_table_name = NULL,
-                                    table_title = "Demographic Profile of Most Impacted Counties", desc = T,
+                                    table_title = "Demographic Profile of Most Impacted Counties",
+                                    desc = TRUE,
                                     source) {
-  
+
   # Read file from Outputs folder
   df <- read_csv(
     here("Outputs", file_name),
     show_col_types = FALSE
   )
-  
+
   # Convert date column
   df <- df |>
     mutate("{date_col}" := as.Date(.data[[date_col]]))
-  
+
   # Use latest date by default
   if (is.null(map_date)) {
     map_date <- max(df[[date_col]], na.rm = TRUE)
   } else {
     map_date <- as.Date(map_date)
   }
-  
-  # Summarize to county level
+
+  # Filter to selected date and hour
   county_demo <- df |>
-    filter(.data[[date_col]] == map_date,
-           hour == map_hr)
-  
-  # Create gt table
+    filter(
+      .data[[date_col]] == map_date,
+      hour == map_hr
+    ) |>
+    mutate(
+      percent_change_decimal = percent_change / 100
+    )
+
+  # Create table
   demo_table <- county_demo |>
     select(
       County = county_name,
       State = county_state,
-      `Population Change (%)` = percent_change,
+      `Population Change (%)` = percent_change_decimal,
       `Total Population` = total_population,
       `Median Household Income` = median_income,
       `Poverty Rate (%)` = poverty_rate,
       `% Age 65+` = pct_age_65_plus,
       `% No Vehicle Access` = pct_no_vehicle
     )
-  demo_table <- arrange(demo_table, `Population Change (%)`)
-  if (desc){
-    demo_table <- arrange(demo_table, desc(`Population Change (%)`))
-  }
-  demo_table |>
-  head(n_counties) |>
-  gt() |>
-  tab_header(
-    title = table_title,
-    subtitle = paste0("Source: ", source)
-  ) |>
-  # Wrap columns
-  cols_width(
-    County ~ px(120),
-    State ~ px(120),
-    `Population Change (%)` ~ px(70),
-    `Total Population` ~ px(70),
-    `Median Household Income` ~ px(70),
-    everything() ~ px(50)
-  ) |>
-  tab_options(
-    table.font.size = px(9),
-    heading.title.font.size = px(16),
-    heading.subtitle.font.size = px(9),
-    data_row.padding = px(25),
-    column_labels.padding = px(0),
-    table.width = pct(100)
-  ) |>
-  fmt_number(
-    columns = `Population Change (%)`,
-    decimals = 1,
-    suffixing = FALSE
-  ) |>
-  fmt_number(
-    columns = `Total Population`,
-    decimals = 0,
-    use_seps = TRUE
-  ) |>
-  fmt_currency(
-    columns = `Median Household Income`,
-    currency = "USD",
-    decimals = 0
-  ) |>
-  fmt_percent(
-    columns = c(`Poverty Rate (%)`, `% Age 65+`, `% No Vehicle Access`),
-    decimals = 1
-  ) |>
-  cols_align(
-    align = "center",
-    columns = everything()
-  ) |>
-  opt_table_font(
-    font = list(
-      google_font("Roboto Condensed"),
-      default_fonts()
-    )
-  )
-}
 
-demographics_table_gt <- function(){
-  
+  # Sort table
+  if (desc) {
+    demo_table <- demo_table |>
+      arrange(desc(`Population Change (%)`))
+  } else {
+    demo_table <- demo_table |>
+      arrange(`Population Change (%)`)
+  }
+
+  # Column label with sorting arrow
+  pop_change_label <- if (desc) {
+    md("Population Change (%) ↓")
+  } else {
+    md("Population Change (%) ↑")
+  }
+
+  # Create gt table
+  demo_table |>
+    head(n_counties) |>
+    gt() |>
+    tab_header(
+      title = table_title,
+      subtitle = paste0("Source: ", source)
+    ) |>
+    cols_label(
+      `Population Change (%)` := pop_change_label
+    ) |>
+    cols_width(
+      County ~ px(120),
+      State ~ px(120),
+      `Population Change (%)` ~ px(70),
+      `Total Population` ~ px(70),
+      `Median Household Income` ~ px(70),
+      everything() ~ px(50)
+    ) |>
+    tab_options(
+      table.font.size = px(9),
+      heading.title.font.size = px(16),
+      heading.subtitle.font.size = px(9),
+      data_row.padding = px(25),
+      column_labels.padding = px(0),
+      table.width = pct(100)
+    ) |>
+    fmt_percent(
+      columns = c(
+        `Population Change (%)`,
+        `Poverty Rate (%)`,
+        `% Age 65+`,
+        `% No Vehicle Access`
+      ),
+      decimals = 1
+    ) |>
+    fmt_number(
+      columns = `Total Population`,
+      decimals = 0,
+      use_seps = TRUE
+    ) |>
+    fmt_currency(
+      columns = `Median Household Income`,
+      currency = "USD",
+      decimals = 0
+    ) |>
+    cols_align(
+      align = "center",
+      columns = everything()
+    ) |>
+    opt_table_font(
+      font = list(
+        google_font("Roboto Condensed"),
+        default_fonts()
+      )
+    )
 }
 ```
 
