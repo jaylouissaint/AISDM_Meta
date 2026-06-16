@@ -210,29 +210,31 @@ The map highlights substantial variation in population change across affected co
 
 **Takeaways** (@fig-pop-bing-dm)
 
-- On February 2nd 12am PST, the counties with the most increased population are (@tbl-bing02-inc):
+- On February 2nd 3am EST, the counties with the most increased population are (@tbl-bing02-inc):
 
-  - Perry, Alabama (103.0%)
-  - Cleburne, Arkansas (58.1%)
-  - Hampton, South Carolina (57.4%)
+  - Perry, Alabama (103.0%; baseline count [^baseline] = 19)
+  - Cleburne, Arkansas (58.1%; baseline count = 29)
+  - Hampton, South Carolina (57.4%; baseline count = 71)
 
-- On February 2nd, the counties with the most decreased population are (@tbl-bing02-dec):
+- On February 2nd 3am EST, the counties with the most decreased population are (@tbl-bing02-dec):
 
-  - Sevier, Tennessee (-22.8%)
-  - Carroll, Ohio (-22.7%)
-  - Swain, North Carolina (-12.4%)
+  - Sevier, Tennessee (-22.8%; baseline count = 43598) 
+  - Carroll, Ohio (-22.7%; baseline count = 12)
+  - Swain, North Carolina (-12.4%; baseline count = 3950)
 
-- On February 12th, the counties with the most increased population are (@tbl-bing12-inc):
+- On February 12th 7pm EST, the counties with the most increased population are (@tbl-bing12-inc):
 
-  - Fairfield, South Carolina (31.3%)
-  - Clay, West Virginia (26.2%)
-  - Kemper, Mississippi (23.3%)
+  - Fairfield, South Carolina (31.3%; baseline count = 115)
+  - Clay, West Virginia (26.2%; baseline count = 22)
+  - Kemper, Mississippi (23.3%; baseline count = 651)
   
-- On February 12th, the counties with the most decreased population are (@tbl-bing12-dec):
+- On February 12th 7pm EST, the counties with the most decreased population are (@tbl-bing12-dec):
 
-  - Sevier, Tenneessee (-21.7%)
-  - Alleghany, North Carolina (-14.7%)
-  - Laurens, Georgia (-11.8%)
+  - Sevier, Tenneessee (-21.7%; baseline count = 19924)
+  - Alleghany, North Carolina (-14.7%; baseline count = 123)
+  - Laurens, Georgia (-11.8%; baseline count = 35)
+
+[^baseline]: Baseline count refers to the average number of Facebook Location Services-enabled users observed during the pre-event reference period. Values shown here have been rounded to the nearest integer. Additional details are provided in the Facebook Data Definitions section.
 
 ## Counties Experiencing the Largest Changes
 
@@ -598,8 +600,11 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 
 # Facebook Data Definitions
+- **Baseline Population (n_baseline)**: Average number of Facebook Location Services-enabled users present in a Bing tile during the baseline period prior to the event. Baseline values are calculated separately for each day of the week and 8-hour time window using historical observations before the start of data collection. Values below Meta's privacy threshold are suppressed. Missing values are later imputed as part of the county-level analysis using the imputation procedure described in @sec-imputation.
 
-- **Population Change  (%)**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline number (plus a small value, usually 1)
+- **Crisis Population (n_crisis)**: Number of Facebook Location Services-enabled users present in a Bing tile during a given 8-hour reporting window. To protect privacy, the counts are subject to noise addition, spatial smoothing, and suppression of small counts. Observations with counts below Meta's reporting threshold may appear as missing values. Missing values are later imputed as part of the county-level analysis using the imputation procedure described in @sec-imputation.
+
+- **Population Change (%)**: Percent change in Facebook Location Services-enabled user population counts per tile, calculated by dividing the difference by the baseline number (plus a small value, usually 1)
 
 - **Time Windows**: aggregated over 3 fixed 8-hour time windows, beginning at 00:00, 08:00 and 16:00 PST, that represent changes in population
 
@@ -614,7 +619,7 @@ For example, a Bing tile located inside Davidson County, Tennessee would be assi
 
 Bing tile observations are assigned to counties using the latitude and longitude coordinates of each tile centroid. The documentation defines these coordinates as the centers of the Bing tile grid cells. These centroid points are spatially joined to county polygons to assign county names and GEOIDs. Quadkeys identify the original Bing tiles, but they are not used directly for county assignment in this report.
 
-## Imputation and County-Level Percent Change
+## Imputation and County-Level Percent Change {#sec-imputation}
 
 For the county-level analysis, this report does not use the original tile-level `percent_change` field as the final county-level measure. Instead, the original `percent_change` column is preserved as `given_percent_change`, and a new county-level `percent_change` is calculated from the underlying baseline and crisis counts.
 
@@ -1319,6 +1324,22 @@ make_imputation_summary_table(
 )
 ```
 
+```{r}
+tk_fb_data_bing |>
+    filter(
+        ds == as.Date("2026-02-12"),
+        hour == "1600"
+    ) |>
+    arrange((percent_change)) |>
+    select(
+        county_name,
+        county_state,
+        n_baseline,
+        n_crisis,
+        percent_change
+    ) |>
+    head(15)
+```
 
 {{< pagebreak >}}
 
